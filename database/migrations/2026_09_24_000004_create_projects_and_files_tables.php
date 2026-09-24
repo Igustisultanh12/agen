@@ -33,7 +33,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('project_id')->constrained('projects')->cascadeOnDelete();
             $table->unsignedBigInteger('parent_id')->nullable()->index();
-            $table->string('path', 1024); // relative path within workspace e.g. src/index.ts
+            $table->string('path', 500); // relative path within workspace e.g. src/index.ts
             $table->string('filename');
             $table->string('extension', 50)->nullable();
             $table->string('mime_type')->nullable();
