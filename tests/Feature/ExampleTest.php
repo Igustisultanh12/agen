@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-// use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
@@ -15,5 +14,11 @@ class ExampleTest extends TestCase
         $response = $this->get('/');
 
         $response->assertStatus(200);
+        $content = $response->getContent();
+
+        // Verify Vite outputs root-relative URLs (/build/assets/...) rather than absolute domain URLs
+        // which avoids port mismatch, CORS, and wrong IP issues across reverse proxies and custom ports.
+        $this->assertStringContainsString('/build/assets/', $content);
+        $this->assertStringNotContainsString('http://localhost:8000/build/', $content);
     }
 }

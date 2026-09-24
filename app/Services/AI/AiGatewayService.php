@@ -272,7 +272,7 @@ class AiGatewayService
                         0,
                         $durationMs,
                         'completed',
-                        'native_gateway',
+                        'provider',
                         $streamResult['provider_request_id'],
                         $conversation->project,
                         $conversation,
