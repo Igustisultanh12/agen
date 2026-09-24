@@ -490,6 +490,7 @@ class NativeGatewayService
         return match ($statusCode) {
             401, 403 => 'AI provider authentication failed. Please verify provider API key in Admin Settings.',
             404 => 'Selected AI model or endpoint not found on upstream provider.',
+            410 => 'The selected AI model has been retired or decommissioned by the provider. Please select a newer model or check admin configuration.',
             429 => 'AI provider rate limit reached. Please retry in a moment or switch to a fallback model.',
             500, 502, 503, 504 => 'AI provider temporarily unavailable. Please retry shortly.',
             default => 'AI request failed (' . ($statusCode ?: 500) . ').',

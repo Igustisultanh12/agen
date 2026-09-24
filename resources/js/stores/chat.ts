@@ -233,11 +233,7 @@ export const useChatStore = defineStore('chat', () => {
         const token = localStorage.getItem('auth_token');
 
         try {
-            const streamUrl = new URL(`/api/chat/conversations/${convId}/stream`, window.location.origin);
-            streamUrl.searchParams.set('prompt', prompt);
-            if (selectedModelId.value) {
-                streamUrl.searchParams.set('model_id', String(selectedModelId.value));
-            }
+            const streamUrl = `/api/chat/conversations/${convId}/stream`;
 
             const response = await fetch(streamUrl.toString(), {
                 method: 'POST',

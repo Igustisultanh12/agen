@@ -120,6 +120,18 @@ class ModelService
             }
         }
 
+        // Automatic safety net: if no other fallbacks configured, append default active model
+        if (count($chain) === 1) {
+            $defaultModel = AiModel::where('is_default', true)
+                ->where('status', 'active')
+                ->where('id', '!=', $primaryModel->id)
+                ->first();
+
+            if ($defaultModel) {
+                $chain[] = $defaultModel;
+            }
+        }
+
         return $chain;
     }
 
