@@ -14,6 +14,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class AiGatewayService
 {
     public function __construct(
+        protected NativeGatewayService $nativeGateway,
         protected FccService $fccService,
         protected ModelService $modelService,
         protected QuotaService $quotaService,
@@ -73,22 +74,17 @@ class AiGatewayService
 
         $lastException = null;
         $attemptNum = 0;
-        $activeUsageLog = null;
 
         foreach ($fallbackChain as $model) {
             $attemptNum++;
             $startAttempt = microtime(true);
 
-            // Construct provider model ref for FCC (e.g. nvidia_nim/nvidia/nemotron-3-super-120b-a12b)
-            $fccModelRef = $model->provider ? "{$model->provider->slug}/{$model->provider_model_id}" : $model->provider_model_id;
-
             try {
-                $fccResponse = $this->fccService->createMessage(
-                    $fccModelRef,
+                $response = $this->nativeGateway->executeChat(
+                    $model,
                     $context['messages'],
                     $context['system'],
                     $model->max_tokens,
-                    null,
                     $internalRequestId
                 );
 
@@ -99,12 +95,12 @@ class AiGatewayService
                     'conversation_id' => $conversation->id,
                     'user_id' => null,
                     'role' => 'assistant',
-                    'content' => $fccResponse['content'],
+                    'content' => $response['content'],
                     'model' => $model->slug,
-                    'input_tokens' => $fccResponse['input_tokens'],
-                    'output_tokens' => $fccResponse['output_tokens'],
-                    'cached_tokens' => $fccResponse['cached_tokens'],
-                    'total_tokens' => $fccResponse['total_tokens'],
+                    'input_tokens' => $response['input_tokens'],
+                    'output_tokens' => $response['output_tokens'],
+                    'cached_tokens' => $response['cached_tokens'],
+                    'total_tokens' => $response['total_tokens'],
                     'duration_ms' => $durationMs,
                 ]);
 
@@ -113,14 +109,14 @@ class AiGatewayService
                     $user,
                     $model,
                     $internalRequestId,
-                    $fccResponse['input_tokens'],
-                    $fccResponse['output_tokens'],
-                    $fccResponse['cached_tokens'],
+                    $response['input_tokens'],
+                    $response['output_tokens'],
+                    $response['cached_tokens'],
                     0,
                     $durationMs,
                     'completed',
-                    $fccResponse['usage_source'],
-                    $fccResponse['provider_request_id'],
+                    $response['usage_source'],
+                    $response['provider_request_id'],
                     $conversation->project,
                     $conversation,
                     $assistantMessage
@@ -142,9 +138,9 @@ class AiGatewayService
                 return [
                     'message' => $assistantMessage,
                     'usage' => [
-                        'input_tokens' => $fccResponse['input_tokens'],
-                        'output_tokens' => $fccResponse['output_tokens'],
-                        'total_tokens' => $fccResponse['total_tokens'],
+                        'input_tokens' => $response['input_tokens'],
+                        'output_tokens' => $response['output_tokens'],
+                        'total_tokens' => $response['total_tokens'],
                         'estimated_cost' => (float) $usageLog->estimated_cost,
                         'currency' => $usageLog->currency,
                     ],
@@ -212,148 +208,116 @@ class AiGatewayService
         ]);
 
         $internalRequestId = (string) Str::uuid();
-        $fccModelRef = $primaryModel->provider ? "{$primaryModel->provider->slug}/{$primaryModel->provider_model_id}" : $primaryModel->provider_model_id;
+        $fallbackChain = $this->modelService->getFallbackChain($primaryModel);
 
-        return response()->stream(function () use ($user, $conversation, $primaryModel, $context, $internalRequestId, $fccModelRef, $prompt) {
+        return response()->stream(function () use ($user, $conversation, $fallbackChain, $context, $internalRequestId, $prompt) {
             // Disable output buffering
             if (ob_get_level() > 0) {
                 ob_end_clean();
             }
 
-            $start = microtime(true);
-            $fullContent = '';
-            $inputTokens = 0;
-            $outputTokens = 0;
-            $cachedTokens = 0;
-            $providerRequestId = null;
+            $hasEmittedTokens = false;
+            $attemptNum = 0;
+            $streamSuccess = false;
 
-            // Send initial SSE ping
-            echo "event: start\ndata: " . json_encode(['internal_request_id' => $internalRequestId, 'model' => $primaryModel->name]) . "\n\n";
-            flush();
+            foreach ($fallbackChain as $model) {
+                $attemptNum++;
+                $startAttempt = microtime(true);
 
-            try {
-                // Connect to FCC Anthropic streaming endpoint
-                $url = rtrim(config('fcc.base_url', 'http://127.0.0.1:8082'), '/') . '/v1/messages';
-                $payload = json_encode([
-                    'model' => $fccModelRef,
-                    'messages' => $context['messages'],
-                    'system' => $context['system'],
-                    'max_tokens' => $primaryModel->max_tokens,
-                    'stream' => true,
-                ]);
-
-                $headers = [
-                    'Authorization: Bearer ' . config('fcc.auth_token', 'freecc'),
-                    'x-api-key: ' . config('fcc.auth_token', 'freecc'),
-                    'anthropic-version: 2023-06-01',
-                    'Content-Type: application/json',
-                    'x-request-id: ' . $internalRequestId,
-                ];
-
-                $ch = curl_init($url);
-                curl_setopt($ch, CURLOPT_POST, true);
-                curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-                curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
-                curl_setopt($ch, CURLOPT_TIMEOUT, 180);
-                curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $data) use (&$fullContent, &$inputTokens, &$outputTokens, &$cachedTokens, &$providerRequestId) {
-                    $lines = explode("\n", $data);
-                    foreach ($lines as $line) {
-                        $trimmed = trim($line);
-                        if (str_starts_with($trimmed, 'data: ')) {
-                            $jsonStr = substr($trimmed, 6);
-                            if ($jsonStr === '[DONE]') {
-                                continue;
-                            }
-                            $eventData = json_decode($jsonStr, true);
-                            if ($eventData && isset($eventData['type'])) {
-                                if ($eventData['type'] === 'message_start' && isset($eventData['message']['usage'])) {
-                                    $inputTokens = $eventData['message']['usage']['input_tokens'] ?? $inputTokens;
-                                    $cachedTokens = $eventData['message']['usage']['cache_read_input_tokens'] ?? $cachedTokens;
-                                    $providerRequestId = $eventData['message']['id'] ?? $providerRequestId;
-                                } elseif ($eventData['type'] === 'content_block_delta' && isset($eventData['delta']['text'])) {
-                                    $chunk = $eventData['delta']['text'];
-                                    $fullContent .= $chunk;
-                                    echo "event: chunk\ndata: " . json_encode(['text' => $chunk]) . "\n\n";
-                                    flush();
-                                } elseif ($eventData['type'] === 'message_delta' && isset($eventData['usage'])) {
-                                    $outputTokens = $eventData['usage']['output_tokens'] ?? $outputTokens;
-                                }
-                            }
-                        }
-                    }
-                    return strlen($data);
-                });
-
-                curl_exec($ch);
-                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                curl_close($ch);
-
-                $durationMs = (int) round((microtime(true) - $start) * 1000);
-
-                if ($httpCode >= 400 || empty($fullContent)) {
-                    // If streaming upstream was unavailable or failed
-                    $err = $this->fccService->mapError($httpCode ?: 500, 'Stream disconnected');
-                    echo "event: error\ndata: " . json_encode(['error' => $err]) . "\n\n";
-                    flush();
-                    return;
-                }
-
-                // If output tokens not provided in stream, estimate
-                if ($outputTokens === 0) {
-                    $outputTokens = (int) ceil(mb_strlen($fullContent) / 4);
-                }
-                if ($inputTokens === 0) {
-                    $inputTokens = $context['estimated_tokens'];
-                }
-
-                // Save assistant message
-                $assistantMessage = Message::create([
-                    'conversation_id' => $conversation->id,
-                    'user_id' => null,
-                    'role' => 'assistant',
-                    'content' => $fullContent,
-                    'model' => $primaryModel->slug,
-                    'input_tokens' => $inputTokens,
-                    'output_tokens' => $outputTokens,
-                    'cached_tokens' => $cachedTokens,
-                    'total_tokens' => $inputTokens + $outputTokens,
-                    'duration_ms' => $durationMs,
-                ]);
-
-                // Record usage
-                $usageLog = $this->tokenUsageService->recordUsage(
-                    $user,
-                    $primaryModel,
-                    $internalRequestId,
-                    $inputTokens,
-                    $outputTokens,
-                    $cachedTokens,
-                    0,
-                    $durationMs,
-                    'completed',
-                    'fcc',
-                    $providerRequestId,
-                    $conversation->project,
-                    $conversation,
-                    $assistantMessage
-                );
-
-                $this->maybeGenerateTitle($conversation, $prompt);
-
-                echo "event: done\ndata: " . json_encode([
-                    'message_id' => $assistantMessage->id,
-                    'input_tokens' => $inputTokens,
-                    'output_tokens' => $outputTokens,
-                    'total_tokens' => $inputTokens + $outputTokens,
-                    'estimated_cost' => (float) $usageLog->estimated_cost,
-                    'currency' => $usageLog->currency,
-                    'duration_ms' => $durationMs,
+                // Send initial SSE ping
+                echo "event: start\ndata: " . json_encode([
+                    'internal_request_id' => $internalRequestId,
+                    'model' => $model->name,
+                    'attempt' => $attemptNum,
                 ]) . "\n\n";
                 flush();
-            } catch (\Exception $e) {
-                Log::error('SSE Stream error: ' . $e->getMessage());
-                echo "event: error\ndata: " . json_encode(['error' => 'AI stream disconnected. Please try again.']) . "\n\n";
+
+                try {
+                    $streamResult = $this->nativeGateway->streamChat(
+                        $model,
+                        $context['messages'],
+                        $context['system'],
+                        function (string $chunk) use (&$hasEmittedTokens) {
+                            $hasEmittedTokens = true;
+                            echo "event: chunk\ndata: " . json_encode(['text' => $chunk]) . "\n\n";
+                            flush();
+                        },
+                        $internalRequestId
+                    );
+
+                    $durationMs = (int) round((microtime(true) - $startAttempt) * 1000);
+
+                    // Save assistant message
+                    $assistantMessage = Message::create([
+                        'conversation_id' => $conversation->id,
+                        'user_id' => null,
+                        'role' => 'assistant',
+                        'content' => $streamResult['content'],
+                        'model' => $model->slug,
+                        'input_tokens' => $streamResult['input_tokens'],
+                        'output_tokens' => $streamResult['output_tokens'],
+                        'cached_tokens' => $streamResult['cached_tokens'],
+                        'total_tokens' => $streamResult['total_tokens'],
+                        'duration_ms' => $durationMs,
+                    ]);
+
+                    // Record usage
+                    $usageLog = $this->tokenUsageService->recordUsage(
+                        $user,
+                        $model,
+                        $internalRequestId,
+                        $streamResult['input_tokens'],
+                        $streamResult['output_tokens'],
+                        $streamResult['cached_tokens'],
+                        0,
+                        $durationMs,
+                        'completed',
+                        'native_gateway',
+                        $streamResult['provider_request_id'],
+                        $conversation->project,
+                        $conversation,
+                        $assistantMessage
+                    );
+
+                    $this->tokenUsageService->recordAttempt(
+                        $usageLog->id,
+                        $internalRequestId,
+                        $model->provider_id,
+                        $model->id,
+                        $attemptNum,
+                        'success',
+                        $durationMs
+                    );
+
+                    $this->maybeGenerateTitle($conversation, $prompt);
+
+                    echo "event: done\ndata: " . json_encode([
+                        'message_id' => $assistantMessage->id,
+                        'input_tokens' => $streamResult['input_tokens'],
+                        'output_tokens' => $streamResult['output_tokens'],
+                        'total_tokens' => $streamResult['total_tokens'],
+                        'estimated_cost' => (float) $usageLog->estimated_cost,
+                        'currency' => $usageLog->currency,
+                        'duration_ms' => $durationMs,
+                    ]) . "\n\n";
+                    flush();
+
+                    $streamSuccess = true;
+                    break;
+                } catch (\Exception $e) {
+                    Log::warning("Stream attempt {$attemptNum} for model {$model->slug} failed: " . $e->getMessage());
+
+                    // If tokens were already partially emitted, do not attempt to fallback mid-stream
+                    if ($hasEmittedTokens) {
+                        echo "event: error\ndata: " . json_encode(['error' => 'Stream interrupted: ' . $e->getMessage()]) . "\n\n";
+                        flush();
+                        return;
+                    }
+                }
+            }
+
+            if (!$streamSuccess && !$hasEmittedTokens) {
+                echo "event: error\ndata: " . json_encode(['error' => 'All AI models in the fallback chain were unavailable. Please verify provider credentials in Admin Settings.']) . "\n\n";
                 flush();
             }
         }, 200, [

@@ -4,76 +4,36 @@ namespace App\Services\AI;
 
 use App\Models\AuditLog;
 use App\Models\ModelProvider;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class ProviderService
 {
     public function __construct(
+        protected NativeGatewayService $nativeGateway,
         protected FccService $fccService
     ) {}
 
     /**
-     * Check health and latency of a single provider.
+     * Check health and latency of a single provider directly.
      */
     public function checkProviderHealth(ModelProvider $provider): array
     {
-        $start = microtime(true);
-        try {
-            $isHealthy = false;
-            $errorMsg = null;
+        $health = $this->nativeGateway->pingProvider($provider);
 
-            if ($provider->type === 'ollama') {
-                $url = rtrim($provider->base_url, '/') . '/api/tags';
-                $resp = Http::timeout(5)->get($url);
-                $isHealthy = $resp->successful();
-                if (!$isHealthy) $errorMsg = "HTTP {$resp->status()}";
-            } elseif ($provider->type === 'lmstudio' || $provider->type === 'llamacpp') {
-                $url = rtrim($provider->base_url, '/') . '/models';
-                $resp = Http::timeout(5)->get($url);
-                $isHealthy = $resp->successful();
-                if (!$isHealthy) $errorMsg = "HTTP {$resp->status()}";
-            } else {
-                // Check via FCC health or pinging base_url
-                $fccHealth = $this->fccService->healthCheck();
-                $isHealthy = $fccHealth['healthy'];
-                if (!$isHealthy) $errorMsg = $fccHealth['error'] ?? 'FCC connection error';
-            }
+        $provider->update([
+            'health_status' => $health['status'],
+            'latency_ms' => $health['latency_ms'],
+            'last_error' => $health['error'],
+            'last_checked_at' => now(),
+        ]);
 
-            $latency = (int) round((microtime(true) - $start) * 1000);
-            $healthStatus = $isHealthy ? 'healthy' : ($latency > 3000 ? 'warning' : 'offline');
-
-            $provider->update([
-                'health_status' => $healthStatus,
-                'latency_ms' => $latency,
-                'last_error' => $errorMsg,
-                'last_checked_at' => now(),
-            ]);
-
-            return [
-                'provider_id' => $provider->id,
-                'name' => $provider->name,
-                'health_status' => $healthStatus,
-                'latency_ms' => $latency,
-                'error' => $errorMsg,
-            ];
-        } catch (\Exception $e) {
-            $latency = (int) round((microtime(true) - $start) * 1000);
-            $provider->update([
-                'health_status' => 'offline',
-                'latency_ms' => $latency,
-                'last_error' => $e->getMessage(),
-                'last_checked_at' => now(),
-            ]);
-
-            return [
-                'provider_id' => $provider->id,
-                'name' => $provider->name,
-                'health_status' => 'offline',
-                'latency_ms' => $latency,
-                'error' => $e->getMessage(),
-            ];
-        }
+        return [
+            'provider_id' => $provider->id,
+            'name' => $provider->name,
+            'health_status' => $health['status'],
+            'latency_ms' => $health['latency_ms'],
+            'error' => $health['error'],
+        ];
     }
 
     /**

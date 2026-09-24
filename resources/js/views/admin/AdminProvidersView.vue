@@ -2,13 +2,15 @@
     <div class="h-full w-full overflow-y-auto p-8 bg-[#0d0f16] space-y-6">
         <AdminNav
             title="AI Providers & Gateways"
-            subtitle="Configure Free Claude Code (FCC) upstream gateways, cloud providers (NVIDIA NIM, OpenRouter, Groq, Gemini) and local LLMs (Ollama, LM Studio)."
+            subtitle="Native direct connections to cloud LLMs (NVIDIA NIM, OpenRouter, Groq, DeepSeek, Gemini) and local models (Ollama, LM Studio) — 100% PHP, zero background terminal process."
         />
 
         <!-- Controls Bar -->
         <div class="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-[#141622] border border-slate-800">
-            <div class="text-xs text-slate-400">
-                Connected Providers: <span class="font-bold text-white font-mono">{{ providers.length }}</span>
+            <div class="flex items-center space-x-3 text-xs text-slate-400">
+                <span>Active Providers: <strong class="text-white font-mono">{{ providers.length }}</strong></span>
+                <span class="text-slate-600">|</span>
+                <span class="text-emerald-400 font-medium">⚡ Direct Laravel Native Gateway</span>
             </div>
 
             <div class="flex items-center space-x-2 w-full sm:w-auto">
@@ -71,10 +73,14 @@
 
                     <div class="space-y-1.5 text-xs text-slate-400 pt-1">
                         <div class="flex justify-between">
-                            <span>Base URL:</span>
+                            <span>Endpoint:</span>
                             <span class="font-mono text-slate-300 truncate max-w-[180px]" :title="provider.base_url">
                                 {{ provider.base_url }}
                             </span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Type:</span>
+                            <span class="font-mono text-slate-300 capitalize">{{ provider.type }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span>Models Configured:</span>
@@ -92,7 +98,7 @@
                         </div>
                     </div>
 
-                    <div v-if="provider.last_error" class="p-2 rounded bg-red-950/20 border border-red-900/30 text-[11px] text-red-400 truncate" :title="provider.last_error">
+                    <div v-if="provider.last_error" class="p-2 rounded bg-amber-950/20 border border-amber-900/30 text-[11px] text-amber-300 truncate" :title="provider.last_error">
                         {{ provider.last_error }}
                     </div>
                 </div>
@@ -101,9 +107,10 @@
                     <button
                         @click="checkSingleHealth(provider)"
                         :disabled="checkingId === provider.id"
-                        class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition-colors disabled:opacity-50"
+                        class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition-colors disabled:opacity-50 flex items-center space-x-1"
                     >
-                        {{ checkingId === provider.id ? 'Pinging...' : 'Ping Test' }}
+                        <span v-if="checkingId === provider.id" class="animate-spin">🔄</span>
+                        <span>{{ checkingId === provider.id ? 'Pinging...' : 'Ping Test' }}</span>
                     </button>
 
                     <div class="flex items-center space-x-2">
@@ -150,7 +157,7 @@
                                 v-model="form.slug"
                                 type="text"
                                 required
-                                placeholder="nvidia / openrouter / groq"
+                                placeholder="nvidia_nim / open_router / groq"
                                 class="w-full px-3 py-2 rounded-lg bg-[#0d0f16] border border-slate-700 text-xs text-white font-mono focus:outline-none focus:border-blue-500"
                             />
                         </div>
@@ -161,17 +168,18 @@
                             <label class="block text-xs font-medium text-slate-300 mb-1">Provider Type</label>
                             <select
                                 v-model="form.type"
+                                @change="handleTypeChange"
                                 class="w-full px-3 py-2 rounded-lg bg-[#0d0f16] border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-500"
                             >
-                                <option value="fcc">Free Claude Code (FCC Proxy)</option>
-                                <option value="nvidia">NVIDIA NIM</option>
-                                <option value="openrouter">OpenRouter</option>
-                                <option value="groq">Groq</option>
-                                <option value="deepseek">DeepSeek</option>
-                                <option value="gemini">Google Gemini</option>
-                                <option value="ollama">Ollama (Local)</option>
+                                <option value="nvidia_nim">NVIDIA NIM (Free / Fast)</option>
+                                <option value="open_router">OpenRouter (Multi-model)</option>
+                                <option value="groq">Groq (Ultra-fast LPU)</option>
+                                <option value="deepseek">DeepSeek (V3 / R1)</option>
+                                <option value="gemini">Google Gemini (Direct)</option>
+                                <option value="ollama">Ollama (Local Offline)</option>
                                 <option value="lmstudio">LM Studio (Local)</option>
                                 <option value="openai">OpenAI Compatible</option>
+                                <option value="fcc">FCC Proxy (Legacy)</option>
                             </select>
                         </div>
                         <div>
@@ -192,7 +200,7 @@
                             v-model="form.base_url"
                             type="url"
                             required
-                            placeholder="http://127.0.0.1:8082"
+                            placeholder="https://integrate.api.nvidia.com/v1"
                             class="w-full px-3 py-2 rounded-lg bg-[#0d0f16] border border-slate-700 text-xs text-white font-mono focus:outline-none focus:border-blue-500"
                         />
                     </div>
@@ -204,7 +212,7 @@
                         <input
                             v-model="form.api_key"
                             type="password"
-                            :placeholder="editingId ? 'Leave blank to retain existing key' : 'sk-... or secret key'"
+                            :placeholder="editingId ? 'Leave blank to retain existing key' : 'sk-... or nvapi-... or gsk_...'"
                             class="w-full px-3 py-2 rounded-lg bg-[#0d0f16] border border-slate-700 text-xs text-white font-mono focus:outline-none focus:border-blue-500"
                         />
                     </div>
@@ -257,12 +265,24 @@ const checkingId = ref<number | null>(null);
 const form = reactive({
     name: '',
     slug: '',
-    type: 'fcc',
-    base_url: 'http://127.0.0.1:8082',
+    type: 'nvidia_nim',
+    base_url: 'https://integrate.api.nvidia.com/v1',
     api_key: '',
     status: 'active',
     priority: 1,
 });
+
+const defaultEndpoints: Record<string, { name: string; slug: string; url: string }> = {
+    nvidia_nim: { name: 'NVIDIA NIM', slug: 'nvidia_nim', url: 'https://integrate.api.nvidia.com/v1' },
+    open_router: { name: 'OpenRouter', slug: 'open_router', url: 'https://openrouter.ai/api/v1' },
+    groq: { name: 'Groq', slug: 'groq', url: 'https://api.groq.com/openai/v1' },
+    deepseek: { name: 'DeepSeek', slug: 'deepseek', url: 'https://api.deepseek.com' },
+    gemini: { name: 'Google Gemini', slug: 'gemini', url: 'https://generativelanguage.googleapis.com/v1beta/openai/' },
+    ollama: { name: 'Ollama (Local)', slug: 'ollama', url: 'http://localhost:11434' },
+    lmstudio: { name: 'LM Studio (Local)', slug: 'lmstudio', url: 'http://localhost:1234/v1' },
+    openai: { name: 'OpenAI', slug: 'openai', url: 'https://api.openai.com/v1' },
+    fcc: { name: 'Free Claude Code Proxy', slug: 'fcc', url: 'http://127.0.0.1:8082' },
+};
 
 onMounted(() => {
     fetchProviders();
@@ -273,10 +293,25 @@ async function fetchProviders() {
     providers.value = res.data;
 }
 
+function handleTypeChange() {
+    if (!editingId.value && defaultEndpoints[form.type]) {
+        const def = defaultEndpoints[form.type];
+        if (!form.name || Object.values(defaultEndpoints).some(d => d.name === form.name)) {
+            form.name = def.name;
+        }
+        if (!form.slug || Object.values(defaultEndpoints).some(d => d.slug === form.slug)) {
+            form.slug = def.slug;
+        }
+        form.base_url = def.url;
+    }
+}
+
 function getProviderEmoji(type: string): string {
     switch (type) {
-        case 'nvidia': return '🟢';
-        case 'openrouter': return '🌐';
+        case 'nvidia':
+        case 'nvidia_nim': return '🟢';
+        case 'openrouter':
+        case 'open_router': return '🌐';
         case 'groq': return '⚡';
         case 'deepseek': return '🐳';
         case 'gemini': return '✨';
@@ -302,10 +337,10 @@ function openModal(provider?: any) {
     } else {
         editingId.value = null;
         Object.assign(form, {
-            name: '',
-            slug: '',
-            type: 'fcc',
-            base_url: 'http://127.0.0.1:8082',
+            name: 'NVIDIA NIM',
+            slug: 'nvidia_nim',
+            type: 'nvidia_nim',
+            base_url: 'https://integrate.api.nvidia.com/v1',
             api_key: '',
             status: 'active',
             priority: providers.value.length + 1,

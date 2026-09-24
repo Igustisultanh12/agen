@@ -1,8 +1,8 @@
 # AI Coding Workspace (Multi-User)
 
-> A modern, browser-based multi-user AI coding workspace powered by the **[Free Claude Code (FCC)](https://github.com/Alishahryar1/free-claude-code)** proxy engine.
+> A modern, browser-based multi-user AI coding workspace with a **100% Native PHP / Laravel AI Gateway** connecting directly to cloud providers (NVIDIA NIM, OpenRouter, Groq, DeepSeek, Google Gemini) and local offline LLMs (Ollama, LM Studio). Zero background terminal or Python process required!
 
-[![Tests](https://img.shields.io/badge/PHPUnit-25%20Passed-emerald.svg)](#automated-testing)
+[![Tests](https://img.shields.io/badge/PHPUnit-29%20Passed%20(105%20assertions)-emerald.svg)](#automated-testing)
 [![Vue 3](https://img.shields.io/badge/Vue-3.x%20TypeScript-42b883.svg)](https://vuejs.org)
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-ff2d20.svg)](https://laravel.com)
 [![Monaco Editor](https://img.shields.io/badge/Editor-Monaco-007acc.svg)](https://microsoft.github.io/monaco-editor/)
@@ -14,8 +14,14 @@
 
 The **AI Coding Workspace** delivers an Antigravity / Cursor-like browser development experience without requiring users to install terminals or local CLIs. It enables software teams, developers, and students to run autonomous coding agents, stream code generation in real-time, inspect files with syntax highlighting, and analyze multi-file projects with strict token quota management and enterprise cost controls.
 
-### Engine Attribution & Integration
-The AI routing engine is integrated with **[Free Claude Code](https://github.com/Alishahryar1/free-claude-code)** developed by [Alishahryar1](https://github.com/Alishahryar1). Free Claude Code provides an Anthropic-compatible wire proxy (`POST /v1/messages`) that routes coding prompts to leading AI providers (NVIDIA NIM, OpenRouter, Groq, DeepSeek, Google Gemini, Ollama, LM Studio).
+### ⚡ 100% Native Laravel Direct AI Gateway
+Previously, running AI models required maintaining an external Python FastAPI proxy daemon in a terminal (`fcc-server`), which suffered from Python 3.14+ version mismatches on Linux/Armbian and consumed RAM.
+
+**Now, the engine runs 100% natively in Laravel (PHP):**
+- **Zero background terminal processes**: Handled entirely through standard PHP-FPM / Nginx.
+- **Direct upstream connections**: Laravel connects directly to NVIDIA NIM, OpenRouter, Groq, DeepSeek, Google Gemini, Ollama, and LM Studio using native cURL SSE streaming.
+- **Web Admin Management**: Set API keys, base URLs, priorities, and run live ping health checks entirely from the browser at `/admin/providers`.
+- **Optional FCC Proxy Support**: Retains full compatibility with legacy Free Claude Code proxies (`http://127.0.0.1:8082`) if desired.
 
 ---
 
@@ -38,7 +44,7 @@ The AI routing engine is integrated with **[Free Claude Code](https://github.com
 - **Dynamic Cost Accounting**: Per-model configurable pricing per 1 million tokens (`input`, `output`, `cached`, `reasoning`).
 
 ### 4. Resilient Fallback Chains & Multi-Provider Architecture
-- **Provider Gateway Adapter**: Connects to NVIDIA NIM (Nemotron 120B default), OpenRouter (Claude 3.5 Sonnet / Haiku), Groq (Llama 3.3 70B), DeepSeek (V3 Chat), Gemini 2.5, and local offline models (Ollama, LM Studio).
+- **Direct Cloud & Local Providers**: Native integration with NVIDIA NIM (Nemotron 120B default), OpenRouter (Claude 3.5 Sonnet / Haiku), Groq (Llama 3.3 70B), DeepSeek (V3 Chat), Gemini 2.5, and local offline models (Ollama, LM Studio).
 - **Automated Fallbacks**: Configurable fallback model chains automatically attempt secondary providers if an upstream provider experiences downtime or rate limits.
 - **Encrypted Provider Credentials**: Upstream provider API keys are encrypted at rest using AES-256 (`Crypt::encryptString`).
 
@@ -59,7 +65,7 @@ Pre-configured autonomous coding agent harnesses:
 - **Dashboard**: Real-time KPI summary (Active Users, Requests, Tokens, Costs), interactive Chart.js time-series timeline, and top users table.
 - **User Management**: Search, filter, edit quota limits, inject bonus tokens, suspend/activate accounts.
 - **Plans & Groups**: Live tier configuration (token caps, rate limits, storage limits).
-- **Provider & Health Monitor**: One-click ping health checks for all AI gateways with latency reporting.
+- **Provider & Health Monitor**: One-click direct ping health checks for all AI gateways with live latency reporting.
 - **Model Pricing Matrix**: Real-time token price editor and fallback chain selector.
 - **Audit Logs**: Full security audit trail tracking user logins, password changes, quota updates, and administrator actions.
 - **Exporting**: One-click streaming CSV export of all AI usage logs.
@@ -71,30 +77,29 @@ Pre-configured autonomous coding agent harnesses:
 ```mermaid
 flowchart TD
     User([Browser Client]) -->|HTTPS / SSE| Frontend[Vue 3 + Monaco + Pinia]
-    Frontend -->|REST API / Bearer Token| Laravel[Laravel 12 API Gateway]
+    Frontend -->|REST API / Bearer Token| Laravel[Laravel 12 Application]
 
-    subgraph Laravel Application
+    subgraph Laravel Native AI Gateway
         Auth[Sanctum Auth & RBAC]
         Quota[QuotaService with lockForUpdate]
         Workspace[WorkspaceService Sandboxed Storage]
         CostCalc[CostCalculatorService]
-        Adapter[AI Gateway Adapter]
+        NativeGW[NativeGatewayService]
     end
 
     Laravel --> Auth
     Auth --> Quota
     Quota --> Workspace
-    Workspace --> Adapter
+    Workspace --> NativeGW
 
-    Adapter -->|POST /v1/messages| FCC[Free Claude Code Proxy :8082]
-
-    subgraph Upstream AI Providers
-        FCC --> NVIDIA[NVIDIA NIM - Nemotron 120B]
-        FCC --> OpenRouter[OpenRouter - Claude 3.5]
-        FCC --> Groq[Groq - Llama 3.3]
-        FCC --> DeepSeek[DeepSeek V3]
-        FCC --> Gemini[Google Gemini 2.5]
-        FCC --> Local[Ollama / LM Studio Local]
+    subgraph Direct Cloud & Local Providers
+        NativeGW -->|Direct HTTPS / SSE| NVIDIA[NVIDIA NIM - Nemotron 120B]
+        NativeGW -->|Direct HTTPS / SSE| OpenRouter[OpenRouter - Claude 3.5]
+        NativeGW -->|Direct HTTPS / SSE| Groq[Groq - Llama 3.3]
+        NativeGW -->|Direct HTTPS / SSE| DeepSeek[DeepSeek V3]
+        NativeGW -->|Direct HTTPS / SSE| Gemini[Google Gemini 2.5]
+        NativeGW -->|Direct HTTP / SSE| Local[Ollama / LM Studio Local]
+        NativeGW -.->|Optional Proxy| FCC[FCC Proxy :8082]
     end
 ```
 
@@ -103,14 +108,14 @@ flowchart TD
 ## 🚀 Getting Started
 
 ### Prerequisites
-- **PHP 8.2 or 8.3** with `pdo_sqlite` or `pdo_mysql`, `curl`, `mbstring`, `openssl`
+- **PHP 8.2, 8.3, or 8.4** with `pdo_sqlite` or `pdo_mysql`, `curl`, `mbstring`, `openssl`
 - **Composer** (v2.x)
 - **Node.js** (v18+) & **npm**
-- **Python 3.10+** (for Free Claude Code engine)
+- *(No Python required!)*
 
 ---
 
-### Step 1: Clone the Repository
+### Step 1: Clone or Pull the Repository
 ```bash
 git clone https://github.com/Igustisultanh12/agen.git
 cd agen
@@ -135,20 +140,14 @@ cp .env.example .env
 php artisan key:generate
 ```
 
-Configure `.env` if using MySQL:
+Configure `.env` for your database:
 ```env
-DB_CONNECTION=sqlite
-# Or for MySQL:
-# DB_CONNECTION=mysql
-# DB_HOST=127.0.0.1
-# DB_PORT=3306
-# DB_DATABASE=ai_workspace
-# DB_USERNAME=root
-# DB_PASSWORD=secret
-
-# Free Claude Code (FCC) Integration Engine
-FCC_BASE_URL=http://127.0.0.1:8082
-FCC_AUTH_TOKEN=freecc
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=ai_site
+DB_USERNAME=ai_site
+DB_PASSWORD=your_password
 ```
 
 ---
@@ -167,48 +166,39 @@ php artisan migrate:fresh --seed
 
 ---
 
-### Step 5: Start the Free Claude Code (FCC) Backend Engine
-In a separate terminal, launch the Free Claude Code FastAPI proxy:
+### Step 5: Build Frontend Assets
 ```bash
-# Clone FCC reference repository if not already present
-git clone https://github.com/Alishahryar1/free-claude-code.git
-cd free-claude-code
-
-# Install dependencies and start server
-pip install -r requirements.txt
-python main.py
-# Running on http://127.0.0.1:8082
+npm run build
 ```
 
 ---
 
-### Step 6: Build & Run the Application
-```bash
-# Build frontend assets (Vite + Vue 3 + Tailwind CSS)
-npm run build
+### Step 6: Configure Your AI Keys in Admin UI
+Open your browser to:
+**`http://your-server-ip:1265/login`** (or `http://localhost:8000/login`)
 
-# Start the Laravel local development server
-php artisan serve
-```
-
-Visit **`http://localhost:8000`** in your browser.
+1. Login as Admin (`admin@example.com` / `admin123456`).
+2. Navigate to **AI Providers** (`/admin/providers`).
+3. Click **Edit** on your chosen provider (e.g. **NVIDIA NIM**, **OpenRouter**, or **Groq**).
+4. Paste your API Key and click **Save Provider**.
+5. Click **Ping Test** — you'll immediately see green `Healthy` with the latency in ms!
+6. Go to **Workspace** (`/workspace`) and start coding!
 
 ---
 
 ## 🧪 Automated Testing
 
-The platform includes a test suite covering Authentication, atomic Quota consumption, Workspace filesystem isolation, Path Traversal protection, and the External API:
+The platform includes a test suite covering Authentication, atomic Quota consumption, Workspace filesystem isolation, Path Traversal protection, Native Gateway routing, and the External API:
 
 ```bash
 php artisan test
 ```
 
-### Test Coverage Highlights:
-- `Tests\Feature\AuthTest`: User registration, Sanctum token generation, password updates, account suspension gates.
-- `Tests\Feature\QuotaTest`: Atomic token deductions, race-condition defenses, threshold checks, bonus token allocation.
-- `Tests\Feature\WorkspaceTest`: Isolated workspace provisioning, Monaco file operations, path traversal prevention (`../../etc/passwd`), blocked executable uploads.
-- `Tests\Feature\ApiKeyTest`: SHA-256 hashed API key validation, scope permission checks (`models.read`, `chat`), key rotation and revocation.
-- `Tests\Feature\AiGatewayTest`: Model catalog grouping, multi-tier pricing calculation, free local model handling.
+### Test Results:
+```
+Tests:    29 passed (105 assertions)
+Duration: 1.28s
+```
 
 ---
 
@@ -216,11 +206,11 @@ php artisan test
 
 - **Path Traversal Protection**: Every file access is strictly resolved against the project workspace folder (`storage/app/workspaces/{uuid}/`) using canonical path checking. Any request containing `..` or leading slashes outside the sandbox is rejected with `422 Unprocessable Content`.
 - **MIME & File Extension Enforcement**: Disallowed extensions (`.exe`, `.dll`, `.bat`, `.cmd`, `.sh`, `.ps1`, `.vbs`) are permanently blocked from upload and creation.
-- **Credential Encryption**: AI Provider keys are never saved in plaintext; they are encrypted via Laravel's AES-256 encryption (`Crypt::encryptString`).
+- **Credential Encryption**: Upstream AI Provider keys are never saved in plaintext; they are encrypted via Laravel's AES-256 encryption (`Crypt::encryptString`).
 - **External API Tokens**: User API keys are generated as random 40-character tokens (`fcc_...`), and only the cryptographic SHA-256 hash is persisted in the database.
 
 ---
 
-## 📄 License
-This project is open-source software licensed under the [MIT License](LICENSE).
-Attribution to [Free Claude Code](https://github.com/Alishahryar1/free-claude-code) for the backend AI proxy engine.
+## 📄 License & Attribution
+- Licensed under the [MIT License](LICENSE).
+- Attribution and inspiration from [Free Claude Code](https://github.com/Alishahryar1/free-claude-code) by [Alishahryar1](https://github.com/Alishahryar1).
