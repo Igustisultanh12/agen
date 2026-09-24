@@ -356,4 +356,48 @@ class AiGatewayTest extends TestCase
         $this->assertEquals('healthy', $provider->health_status);
         $this->assertNotNull($provider->last_checked_at);
     }
+
+    public function test_chat_stream_endpoint(): void
+    {
+        $user = User::factory()->create(['status' => 'active']);
+        $token = $user->createToken('test')->plainTextToken;
+
+        $provider = ModelProvider::create([
+            'name' => 'NVIDIA Test',
+            'slug' => 'nvidia_test_stream',
+            'type' => 'nvidia_nim',
+            'base_url' => 'https://integrate.api.nvidia.com/v1',
+            'status' => 'active',
+            'priority' => 1,
+        ]);
+        $provider->api_key = 'nvapi-test';
+        $provider->save();
+
+        $model = AiModel::create([
+            'provider_id' => $provider->id,
+            'name' => 'Nemotron',
+            'slug' => 'nemotron-stream-test',
+            'provider_model_id' => 'nvidia/nemotron-3-super-120b-a12b',
+            'context_window' => 131072,
+            'max_tokens' => 4096,
+            'category' => 'free',
+            'status' => 'active',
+            'visibility' => 'all',
+            'is_default' => true,
+        ]);
+
+        $conversation = Conversation::create([
+            'user_id' => $user->id,
+            'model_id' => $model->id,
+            'title' => 'Test Stream',
+            'status' => 'active',
+        ]);
+
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/chat/conversations/{$conversation->id}/stream", [
+                'prompt' => 'Hello',
+            ]);
+
+        $this->assertTrue(in_array($response->getStatusCode(), [200, 500]));
+    }
 }

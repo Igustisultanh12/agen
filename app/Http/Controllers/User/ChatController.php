@@ -146,6 +146,23 @@ class ChatController extends Controller
     {
         $this->authorizeConversationAccess($request->user(), $conversation);
 
+        if ($request->filled('model_id')) {
+            $m = AiModel::find($request->input('model_id'));
+            if ($m) {
+                $conversation->model_id = $m->id;
+                $conversation->provider_id = $m->provider_id;
+                $conversation->save();
+            }
+        } elseif (!$conversation->model_id) {
+            $defaultModel = AiModel::where('is_default', true)->where('status', 'active')->first()
+                ?? AiModel::where('status', 'active')->first();
+            if ($defaultModel) {
+                $conversation->model_id = $defaultModel->id;
+                $conversation->provider_id = $defaultModel->provider_id;
+                $conversation->save();
+            }
+        }
+
         $validated = $request->validate([
             'prompt' => 'required|string|max:100000',
             'selected_file_ids' => 'nullable|array',
@@ -180,6 +197,23 @@ class ChatController extends Controller
     public function stream(Request $request, Conversation $conversation): StreamedResponse|JsonResponse
     {
         $this->authorizeConversationAccess($request->user(), $conversation);
+
+        if ($request->filled('model_id')) {
+            $m = AiModel::find($request->input('model_id'));
+            if ($m) {
+                $conversation->model_id = $m->id;
+                $conversation->provider_id = $m->provider_id;
+                $conversation->save();
+            }
+        } elseif (!$conversation->model_id) {
+            $defaultModel = AiModel::where('is_default', true)->where('status', 'active')->first()
+                ?? AiModel::where('status', 'active')->first();
+            if ($defaultModel) {
+                $conversation->model_id = $defaultModel->id;
+                $conversation->provider_id = $defaultModel->provider_id;
+                $conversation->save();
+            }
+        }
 
         $validated = $request->validate([
             'prompt' => 'required|string|max:100000',

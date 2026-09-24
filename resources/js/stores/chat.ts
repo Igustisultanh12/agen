@@ -168,6 +168,45 @@ export const useChatStore = defineStore('chat', () => {
         }
     }
 
+    async function sendMessageFallback(
+        convId: number,
+        prompt: string,
+        selectedFileIds: number[] = [],
+        currentFilePath?: string,
+        currentFileContent?: string
+    ) {
+        const payload: any = {
+            prompt,
+            selected_file_ids: selectedFileIds,
+            current_file_path: currentFilePath,
+            current_file_content: currentFileContent,
+        };
+        if (selectedModelId.value) {
+            payload.model_id = selectedModelId.value;
+        }
+
+        const res = await api.post(`/chat/conversations/${convId}/send`, payload);
+        const assistantMsg = res.data.message;
+
+        messages.value.push({
+            id: assistantMsg.id,
+            role: 'assistant',
+            content: assistantMsg.content,
+            model: assistantMsg.model,
+            input_tokens: assistantMsg.input_tokens,
+            output_tokens: assistantMsg.output_tokens,
+            total_tokens: assistantMsg.total_tokens,
+            estimated_cost: res.data.usage?.estimated_cost,
+            duration_ms: assistantMsg.duration_ms,
+            created_at: assistantMsg.created_at || new Date().toISOString(),
+        });
+        streamingContent.value = '';
+
+        const authStore = useAuthStore();
+        await authStore.fetchMe();
+        await selectConversation(convId);
+    }
+
     async function sendMessageStream(
         prompt: string,
         selectedFileIds: number[] = [],
@@ -194,15 +233,23 @@ export const useChatStore = defineStore('chat', () => {
         const token = localStorage.getItem('auth_token');
 
         try {
-            const response = await fetch(`/api/chat/conversations/${convId}/stream`, {
+            const streamUrl = new URL(`/api/chat/conversations/${convId}/stream`, window.location.origin);
+            streamUrl.searchParams.set('prompt', prompt);
+            if (selectedModelId.value) {
+                streamUrl.searchParams.set('model_id', String(selectedModelId.value));
+            }
+
+            const response = await fetch(streamUrl.toString(), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'text/event-stream',
+                    'Accept': 'text/event-stream, application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
                     'Authorization': `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                     prompt,
+                    model_id: selectedModelId.value,
                     selected_file_ids: selectedFileIds,
                     current_file_path: currentFilePath,
                     current_file_content: currentFileContent,
@@ -211,12 +258,16 @@ export const useChatStore = defineStore('chat', () => {
             });
 
             if (!response.ok) {
-                const errData = await response.json().catch(() => ({}));
-                throw new Error(errData.message || `Error ${response.status}: ${response.statusText}`);
+                console.warn('Streaming endpoint returned error, switching to direct send fallback...');
+                await sendMessageFallback(convId, prompt, selectedFileIds, currentFilePath, currentFileContent);
+                return;
             }
 
             const reader = response.body?.getReader();
-            if (!reader) throw new Error('No readable stream available');
+            if (!reader) {
+                await sendMessageFallback(convId, prompt, selectedFileIds, currentFilePath, currentFileContent);
+                return;
+            }
 
             const decoder = new TextDecoder('utf-8');
             let buffer = '';
@@ -280,11 +331,16 @@ export const useChatStore = defineStore('chat', () => {
                     });
                 }
             } else {
-                messages.value.push({
-                    role: 'assistant',
-                    content: `⚠️ Error: ${err.message || 'Connection failed'}`,
-                    created_at: new Date().toISOString(),
-                });
+                try {
+                    console.warn('Stream connection failed, falling back to direct send...', err);
+                    await sendMessageFallback(convId, prompt, selectedFileIds, currentFilePath, currentFileContent);
+                } catch (fallbackErr: any) {
+                    messages.value.push({
+                        role: 'assistant',
+                        content: `⚠️ Error: ${fallbackErr.response?.data?.message || fallbackErr.message || err.message || 'Connection failed'}`,
+                        created_at: new Date().toISOString(),
+                    });
+                }
             }
         } finally {
             isStreaming.value = false;

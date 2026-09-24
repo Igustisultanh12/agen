@@ -51,8 +51,8 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::get('conversations/{conversation}', [ChatController::class, 'show']);
         Route::put('conversations/{conversation}', [ChatController::class, 'update']);
         Route::delete('conversations/{conversation}', [ChatController::class, 'destroy']);
-        Route::post('conversations/{conversation}/send', [ChatController::class, 'send']);
-        Route::post('conversations/{conversation}/stream', [ChatController::class, 'stream']);
+        Route::match(['GET', 'POST'], 'conversations/{conversation}/send', [ChatController::class, 'send']);
+        Route::match(['GET', 'POST'], 'conversations/{conversation}/stream', [ChatController::class, 'stream']);
         Route::post('stop', [ChatController::class, 'stop']);
     });
 
