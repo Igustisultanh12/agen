@@ -29,24 +29,50 @@ class AuthController extends Controller
 
         $throttleKey = 'login:' . Str::lower($request->input('email')) . '|' . $request->ip();
 
-        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
-            $seconds = RateLimiter::availableIn($throttleKey);
-            AuditLog::log('failed_login_throttled', 'User', null, ['email' => $request->input('email'), 'wait_seconds' => $seconds]);
-            return response()->json([
-                'error' => 'Too Many Attempts',
-                'message' => "Too many login attempts. Please try again in {$seconds} seconds.",
-            ], 429);
-        }
+        // 1. Auto-bootstrap first admin user if database is empty
+        if (User::count() === 0) {
+            RateLimiter::clear($throttleKey);
 
-        $user = User::where('email', $validated['email'])->first();
+            if (UserGroup::count() === 0) {
+                \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\UserGroupSeeder', '--force' => true]);
+            }
+            if (\App\Models\ModelProvider::count() === 0) {
+                \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\ProviderAndModelSeeder', '--force' => true]);
+                \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\CodingAgentSeeder', '--force' => true]);
+            }
 
-        if (!$user || !Hash::check($validated['password'], $user->password)) {
-            RateLimiter::hit($throttleKey, 60);
-            AuditLog::log('failed_login', 'User', null, ['email' => $request->input('email')]);
-            return response()->json([
-                'error' => 'Invalid Credentials',
-                'message' => 'The provided email or password is incorrect.',
-            ], 422);
+            $adminGroup = UserGroup::where('slug', 'premium')->first() ?? UserGroup::first();
+
+            $user = User::create([
+                'name' => 'Admin Antigravity',
+                'email' => $validated['email'],
+                'password' => $validated['password'],
+                'role' => 'admin',
+                'status' => 'active',
+                'user_group_id' => $adminGroup?->id,
+            ]);
+
+            $this->quotaService->initializeUserQuota($user);
+        } else {
+            if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+                $seconds = RateLimiter::availableIn($throttleKey);
+                AuditLog::log('failed_login_throttled', 'User', null, ['email' => $request->input('email'), 'wait_seconds' => $seconds]);
+                return response()->json([
+                    'error' => 'Too Many Attempts',
+                    'message' => "Too many login attempts. Please try again in {$seconds} seconds.",
+                ], 429);
+            }
+
+            $user = User::where('email', $validated['email'])->first();
+
+            if (!$user || !Hash::check($validated['password'], $user->password)) {
+                RateLimiter::hit($throttleKey, 60);
+                AuditLog::log('failed_login', 'User', null, ['email' => $request->input('email')]);
+                return response()->json([
+                    'error' => 'Invalid Credentials',
+                    'message' => 'The provided email or password is incorrect.',
+                ], 422);
+            }
         }
 
         if ($user->isSuspended()) {
@@ -86,13 +112,26 @@ class AuthController extends Controller
             'password' => 'required|string|min:8|confirmed',
         ]);
 
-        $defaultGroup = UserGroup::where('is_default', true)->first()
-            ?? UserGroup::where('slug', 'free')->first();
+        $isFirstUser = (User::count() === 0);
+
+        if ($isFirstUser) {
+            if (UserGroup::count() === 0) {
+                \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\UserGroupSeeder', '--force' => true]);
+            }
+            if (\App\Models\ModelProvider::count() === 0) {
+                \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\ProviderAndModelSeeder', '--force' => true]);
+                \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\CodingAgentSeeder', '--force' => true]);
+            }
+        }
+
+        $defaultGroup = UserGroup::where('is_default', true)->first() 
+            ?? UserGroup::where('slug', 'free')->first()
+            ?? UserGroup::first();
 
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
+            'password' => $validated['password'],
             'role' => 'user',
             'status' => 'active',
             'user_group_id' => $defaultGroup?->id,

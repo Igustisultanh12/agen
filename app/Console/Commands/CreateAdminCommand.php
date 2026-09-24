@@ -82,8 +82,8 @@ class CreateAdminCommand extends Command
         // Initialize quota
         $quotaService->initializeUserQuota($user);
 
-        // Clear any login throttle keys for this email
-        RateLimiter::clear('login:' . Str::lower($email));
+        // Clear any login throttle keys and cache so user can log in immediately without waiting
+        $this->callSilent('cache:clear');
 
         $this->newLine();
         $this->table(

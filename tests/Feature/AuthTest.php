@@ -180,4 +180,24 @@ class AuthTest extends TestCase
         $this->assertTrue(Hash::check('newadminpass123', $user->password));
         $this->assertTrue($user->isAdmin());
     }
+
+    public function test_login_auto_bootstraps_admin_when_database_is_empty(): void
+    {
+        User::query()->delete();
+        $this->assertEquals(0, User::count());
+
+        $response = $this->postJson('/api/auth/login', [
+            'email' => 'admin@example.com',
+            'password' => 'admin123456',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonStructure(['token', 'user']);
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'admin@example.com',
+            'role' => 'admin',
+            'status' => 'active',
+        ]);
+    }
 }
