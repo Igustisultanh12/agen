@@ -34,7 +34,7 @@ class Message extends Model
             'output_tokens' => 'integer',
             'cached_tokens' => 'integer',
             'total_tokens' => 'integer',
-            'estimated_cost' => 'decimal:6',
+            'estimated_cost' => 'float',
             'duration_ms' => 'integer',
             'is_streaming' => 'boolean',
             'metadata' => 'array',

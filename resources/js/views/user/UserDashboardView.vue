@@ -36,15 +36,15 @@
             <!-- Monthly Tokens -->
             <div class="p-5 rounded-xl bg-[#141622] border border-slate-800/80 space-y-2">
                 <div class="text-xs text-slate-400 font-medium">Monthly Tokens</div>
-                <div class="text-2xl font-bold font-mono text-blue-400">{{ (usage.month.total_tokens / 1000000).toFixed(2) }}M</div>
-                <div class="text-[11px] text-slate-400 font-mono">Limit: {{ (usage.quota.monthly_token_limit / 1000000).toFixed(0) }}M ({{ usage.quota.monthly_usage_percentage }}%)</div>
+                <div class="text-2xl font-bold font-mono text-blue-400">{{ (Number(usage.month.total_tokens || 0) / 1000000).toFixed(2) }}M</div>
+                <div class="text-[11px] text-slate-400 font-mono">Limit: {{ (Number(usage.quota.monthly_token_limit || 0) / 1000000).toFixed(0) }}M ({{ usage.quota.monthly_usage_percentage }}%)</div>
             </div>
 
             <!-- Estimated Cost -->
             <div class="p-5 rounded-xl bg-[#141622] border border-slate-800/80 space-y-2">
                 <div class="text-xs text-slate-400 font-medium">Estimated Usage Cost</div>
-                <div class="text-2xl font-bold font-mono text-emerald-400">${{ usage.month.estimated_cost.toFixed(3) }}</div>
-                <div class="text-[11px] text-slate-400">Today: ${{ usage.today.estimated_cost.toFixed(3) }}</div>
+                <div class="text-2xl font-bold font-mono text-emerald-400">${{ Number(usage.month.estimated_cost || 0).toFixed(3) }}</div>
+                <div class="text-[11px] text-slate-400">Today: ${{ Number(usage.today.estimated_cost || 0).toFixed(3) }}</div>
             </div>
 
             <!-- Total Requests -->
@@ -108,7 +108,7 @@
                             <td class="p-3 font-sans font-medium text-white">{{ req.model }}</td>
                             <td class="p-3 text-slate-400">{{ req.provider }}</td>
                             <td class="p-3">{{ req.total_tokens.toLocaleString() }}</td>
-                            <td class="p-3 text-emerald-400">${{ req.estimated_cost.toFixed(4) }}</td>
+                            <td class="p-3 text-emerald-400">${{ Number(req.estimated_cost || 0).toFixed(4) }}</td>
                             <td class="p-3">
                                 <span class="px-2 py-0.5 rounded text-[10px]" :class="req.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'">
                                     {{ req.status }}

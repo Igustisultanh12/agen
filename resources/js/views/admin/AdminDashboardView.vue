@@ -50,10 +50,10 @@
                         <span class="text-purple-400 font-semibold">🧠</span>
                     </div>
                     <div class="text-3xl font-bold font-mono text-purple-400">
-                        {{ (adminStore.dashboard.tokens.this_month / 1000000).toFixed(2) }}M
+                        {{ (Number(adminStore.dashboard.tokens.this_month || 0) / 1000000).toFixed(2) }}M
                     </div>
                     <div class="text-[11px] text-slate-400">
-                        Today: {{ (adminStore.dashboard.tokens.today / 1000).toFixed(1) }}k tokens
+                        Today: {{ (Number(adminStore.dashboard.tokens.today || 0) / 1000).toFixed(1) }}k tokens
                     </div>
                 </div>
 
@@ -64,10 +64,10 @@
                         <span class="text-emerald-400 font-semibold">💵</span>
                     </div>
                     <div class="text-3xl font-bold font-mono text-emerald-400">
-                        ${{ adminStore.dashboard.cost.this_month.toFixed(3) }}
+                        ${{ Number(adminStore.dashboard.cost.this_month || 0).toFixed(3) }}
                     </div>
                     <div class="text-[11px] text-slate-400">
-                        Today: ${{ adminStore.dashboard.cost.today.toFixed(3) }}
+                        Today: ${{ Number(adminStore.dashboard.cost.today || 0).toFixed(3) }}
                     </div>
                 </div>
             </div>

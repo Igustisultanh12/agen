@@ -41,7 +41,7 @@
                     </div>
                     <div>
                         <span class="text-slate-400">Estimated Total Cost:</span>
-                        <span class="text-emerald-400 font-mono font-medium ml-2">${{ usage.quota.total_cost_usd.toFixed(4) }} USD</span>
+                        <span class="text-emerald-400 font-mono font-medium ml-2">${{ Number(usage.quota.total_cost_usd || 0).toFixed(4) }} USD</span>
                     </div>
                 </div>
             </div>
@@ -71,7 +71,7 @@
                                 <td class="p-3">{{ req.input_tokens.toLocaleString() }}</td>
                                 <td class="p-3">{{ req.output_tokens.toLocaleString() }}</td>
                                 <td class="p-3">{{ req.total_tokens.toLocaleString() }}</td>
-                                <td class="p-3 text-emerald-400">${{ req.estimated_cost.toFixed(4) }}</td>
+                                <td class="p-3 text-emerald-400">${{ Number(req.estimated_cost || 0).toFixed(4) }}</td>
                                 <td class="p-3 text-slate-400">{{ req.duration_ms }}ms</td>
                                 <td class="p-3">
                                     <span class="px-2 py-0.5 rounded text-[10px]" :class="req.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'">

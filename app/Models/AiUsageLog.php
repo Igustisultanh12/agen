@@ -43,8 +43,8 @@ class AiUsageLog extends Model
             'cached_tokens' => 'integer',
             'reasoning_tokens' => 'integer',
             'total_tokens' => 'integer',
-            'estimated_cost' => 'decimal:6',
-            'actual_cost' => 'decimal:6',
+            'estimated_cost' => 'float',
+            'actual_cost' => 'float',
             'duration_ms' => 'integer',
         ];
     }

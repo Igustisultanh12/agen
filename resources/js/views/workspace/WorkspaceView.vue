@@ -24,7 +24,7 @@
                 <div v-if="sessionTotalTokens > 0" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-[#E2E8F0] text-[11px] font-mono text-slate-600 shadow-xs">
                     <span>⚡ {{ sessionTotalTokens.toLocaleString() }} tokens</span>
                     <span class="text-slate-300">|</span>
-                    <span class="text-emerald-600 font-semibold">${{ sessionEstimatedCost.toFixed(4) }} est.</span>
+                    <span class="text-emerald-600 font-semibold">${{ formatCost(sessionEstimatedCost) }} est.</span>
                 </div>
 
                 <!-- Toggle Code Editor Panel -->
@@ -97,8 +97,8 @@
                                     <span>Model: <strong class="text-slate-600">{{ msg.model || 'NVIDIA / FCC' }}</strong></span>
                                     <div class="flex items-center space-x-2">
                                         <span>{{ msg.total_tokens }} tokens</span>
-                                        <span v-if="msg.estimated_cost">• ${{ msg.estimated_cost.toFixed(4) }}</span>
-                                        <span v-if="msg.duration_ms">• {{ (msg.duration_ms / 1000).toFixed(1) }}s</span>
+                                        <span v-if="msg.estimated_cost">• ${{ formatCost(msg.estimated_cost) }}</span>
+                                        <span v-if="msg.duration_ms">• {{ (Number(msg.duration_ms || 0) / 1000).toFixed(1) }}s</span>
                                     </div>
                                 </div>
                             </div>
@@ -397,12 +397,20 @@ const starterPrompts = [
     'Buatkan state management Vue 3 dengan Pinia',
 ];
 
+function formatCost(val: any, decimals = 4): string {
+    const num = parseFloat(String(val ?? 0));
+    return isNaN(num) ? '0.0000' : num.toFixed(decimals);
+}
+
 const sessionTotalTokens = computed(() => {
-    return chatStore.messages.reduce((sum, m) => sum + (m.total_tokens || 0), 0);
+    return chatStore.messages.reduce((sum, m) => sum + (Number(m.total_tokens) || 0), 0);
 });
 
-const sessionEstimatedCost = computed(() => {
-    return chatStore.messages.reduce((sum, m) => sum + (m.estimated_cost || 0), 0);
+const sessionEstimatedCost = computed<number>(() => {
+    return chatStore.messages.reduce((sum, m) => {
+        const val = parseFloat(String(m.estimated_cost ?? 0));
+        return sum + (isNaN(val) ? 0 : val);
+    }, 0);
 });
 
 onMounted(async () => {
