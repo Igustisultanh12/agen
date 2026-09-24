@@ -49,15 +49,32 @@ class ModelProvider extends Model
 
     public function getApiKeyDecryptedAttribute(): ?string
     {
-        if (empty($this->attributes['api_key_encrypted'])) {
-            return null;
+        if (!empty($this->attributes['api_key_encrypted'])) {
+            try {
+                $decrypted = Crypt::decryptString($this->attributes['api_key_encrypted']);
+                if (!empty($decrypted)) {
+                    return $decrypted;
+                }
+            } catch (\Exception) {
+                // fall through to env fallback
+            }
         }
 
-        try {
-            return Crypt::decryptString($this->attributes['api_key_encrypted']);
-        } catch (\Exception) {
-            return null;
-        }
+        return match ($this->slug) {
+            'nvidia_nim' => env('NVIDIA_API_KEY') ?: env('NVIDIA_NIM_API_KEY'),
+            'open_router' => env('OPENROUTER_API_KEY'),
+            'groq' => env('GROQ_API_KEY'),
+            'deepseek' => env('DEEPSEEK_API_KEY'),
+            'gemini' => env('GEMINI_API_KEY'),
+            default => match ($this->type) {
+                'nvidia_nim' => env('NVIDIA_API_KEY') ?: env('NVIDIA_NIM_API_KEY'),
+                'open_router' => env('OPENROUTER_API_KEY'),
+                'groq' => env('GROQ_API_KEY'),
+                'deepseek' => env('DEEPSEEK_API_KEY'),
+                'gemini' => env('GEMINI_API_KEY'),
+                default => null,
+            },
+        };
     }
 
     public function models(): HasMany
