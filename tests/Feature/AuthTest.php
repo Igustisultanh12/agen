@@ -161,4 +161,23 @@ class AuthTest extends TestCase
         $user->refresh();
         $this->assertTrue(Hash::check('newpassword456', $user->password));
     }
+
+    public function test_artisan_admin_create_creates_or_resets_admin(): void
+    {
+        $this->artisan('admin:create', [
+            '--email' => 'newadmin@example.com',
+            '--password' => 'newadminpass123',
+            '--name' => 'Custom Admin',
+        ])->assertExitCode(0);
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'newadmin@example.com',
+            'role' => 'admin',
+            'status' => 'active',
+        ]);
+
+        $user = User::where('email', 'newadmin@example.com')->first();
+        $this->assertTrue(Hash::check('newadminpass123', $user->password));
+        $this->assertTrue($user->isAdmin());
+    }
 }
