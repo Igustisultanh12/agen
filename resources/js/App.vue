@@ -1,5 +1,5 @@
 <template>
-    <div class="h-screen w-screen flex overflow-hidden bg-[#0d0f16] text-slate-100 font-sans">
+    <div class="h-screen w-screen flex overflow-hidden bg-[#F8FAFC] text-[#334155] font-sans antialiased">
         <Sidebar v-if="authStore.isAuthenticated" />
         
         <main class="flex-1 flex flex-col min-w-0 overflow-hidden relative">

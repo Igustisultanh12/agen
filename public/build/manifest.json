@@ -1,6 +1,6 @@
 {
-  "_AdminNav-AWYRUv44.js": {
-    "file": "assets/AdminNav-AWYRUv44.js",
+  "_AdminNav-CZYn7KIf.js": {
+    "file": "assets/AdminNav-CZYn7KIf.js",
     "name": "AdminNav",
     "imports": [
       "_client-B9psjUpS.js"
@@ -14,8 +14,8 @@
     "file": "assets/editor-jjEx9u7D.css",
     "src": "_editor-jjEx9u7D.css"
   },
-  "_editor.api-CHb6S_q3.js": {
-    "file": "assets/editor.api-CHb6S_q3.js",
+  "_editor.api-3Ucjz3eQ.js": {
+    "file": "assets/editor.api-3Ucjz3eQ.js",
     "name": "editor.api",
     "imports": [
       "resources/js/app.ts"
@@ -27,11 +27,11 @@
       "assets/editorWebWorkerMain-J2ryhYi2.js"
     ]
   },
-  "_lspLanguageFeatures-Cd4D0eH2.js": {
-    "file": "assets/lspLanguageFeatures-Cd4D0eH2.js",
+  "_lspLanguageFeatures-CyMUWJfY.js": {
+    "file": "assets/lspLanguageFeatures-CyMUWJfY.js",
     "name": "lspLanguageFeatures",
     "imports": [
-      "_editor.api-CHb6S_q3.js"
+      "_editor.api-3Ucjz3eQ.js"
     ]
   },
   "_pinia-CqCpowN7.js": {
@@ -49,11 +49,11 @@
       "_pinia-CqCpowN7.js"
     ]
   },
-  "_workers-B3mXZsDd.js": {
-    "file": "assets/workers-B3mXZsDd.js",
+  "_workers-BULk378f.js": {
+    "file": "assets/workers-BULk378f.js",
     "name": "workers",
     "imports": [
-      "_editor.api-CHb6S_q3.js",
+      "_editor.api-3Ucjz3eQ.js",
       "resources/js/views/workspace/WorkspaceView.vue"
     ]
   },
@@ -174,12 +174,12 @@
     "isDynamicEntry": true
   },
   "node_modules/monaco-editor/esm/vs/languages/definitions/freemarker2/freemarker2.js": {
-    "file": "assets/freemarker2-BGmj-6u4.js",
+    "file": "assets/freemarker2-4yzU5i84.js",
     "name": "freemarker2",
     "src": "node_modules/monaco-editor/esm/vs/languages/definitions/freemarker2/freemarker2.js",
     "isDynamicEntry": true,
     "imports": [
-      "_editor.api-CHb6S_q3.js"
+      "_editor.api-3Ucjz3eQ.js"
     ]
   },
   "node_modules/monaco-editor/esm/vs/languages/definitions/fsharp/fsharp.js": {
@@ -201,12 +201,12 @@
     "isDynamicEntry": true
   },
   "node_modules/monaco-editor/esm/vs/languages/definitions/handlebars/handlebars.js": {
-    "file": "assets/handlebars-BU07JjOY.js",
+    "file": "assets/handlebars-B3bfcdej.js",
     "name": "handlebars",
     "src": "node_modules/monaco-editor/esm/vs/languages/definitions/handlebars/handlebars.js",
     "isDynamicEntry": true,
     "imports": [
-      "_editor.api-CHb6S_q3.js"
+      "_editor.api-3Ucjz3eQ.js"
     ]
   },
   "node_modules/monaco-editor/esm/vs/languages/definitions/hcl/hcl.js": {
@@ -216,12 +216,12 @@
     "isDynamicEntry": true
   },
   "node_modules/monaco-editor/esm/vs/languages/definitions/html/html.js": {
-    "file": "assets/html-D-IhcGXJ.js",
+    "file": "assets/html-uSAXONUR.js",
     "name": "html",
     "src": "node_modules/monaco-editor/esm/vs/languages/definitions/html/html.js",
     "isDynamicEntry": true,
     "imports": [
-      "_editor.api-CHb6S_q3.js"
+      "_editor.api-3Ucjz3eQ.js"
     ]
   },
   "node_modules/monaco-editor/esm/vs/languages/definitions/ini/ini.js": {
@@ -237,7 +237,7 @@
     "isDynamicEntry": true
   },
   "node_modules/monaco-editor/esm/vs/languages/definitions/javascript/javascript.js": {
-    "file": "assets/javascript-BDmZVkee.js",
+    "file": "assets/javascript-DyApKGjQ.js",
     "name": "javascript",
     "src": "node_modules/monaco-editor/esm/vs/languages/definitions/javascript/javascript.js",
     "isDynamicEntry": true,
@@ -270,12 +270,12 @@
     "isDynamicEntry": true
   },
   "node_modules/monaco-editor/esm/vs/languages/definitions/liquid/liquid.js": {
-    "file": "assets/liquid-B8d-Y9k-.js",
+    "file": "assets/liquid-DtxGZqt6.js",
     "name": "liquid",
     "src": "node_modules/monaco-editor/esm/vs/languages/definitions/liquid/liquid.js",
     "isDynamicEntry": true,
     "imports": [
-      "_editor.api-CHb6S_q3.js"
+      "_editor.api-3Ucjz3eQ.js"
     ]
   },
   "node_modules/monaco-editor/esm/vs/languages/definitions/lua/lua.js": {
@@ -297,12 +297,12 @@
     "isDynamicEntry": true
   },
   "node_modules/monaco-editor/esm/vs/languages/definitions/mdx/mdx.js": {
-    "file": "assets/mdx-BUoZ8jH9.js",
+    "file": "assets/mdx-D4dFN5Jn.js",
     "name": "mdx",
     "src": "node_modules/monaco-editor/esm/vs/languages/definitions/mdx/mdx.js",
     "isDynamicEntry": true,
     "imports": [
-      "_editor.api-CHb6S_q3.js"
+      "_editor.api-3Ucjz3eQ.js"
     ]
   },
   "node_modules/monaco-editor/esm/vs/languages/definitions/mips/mips.js": {
@@ -396,12 +396,12 @@
     "isDynamicEntry": true
   },
   "node_modules/monaco-editor/esm/vs/languages/definitions/python/python.js": {
-    "file": "assets/python-Bo4-j_Qh.js",
+    "file": "assets/python-Dvyy4zW5.js",
     "name": "python",
     "src": "node_modules/monaco-editor/esm/vs/languages/definitions/python/python.js",
     "isDynamicEntry": true,
     "imports": [
-      "_editor.api-CHb6S_q3.js"
+      "_editor.api-3Ucjz3eQ.js"
     ]
   },
   "node_modules/monaco-editor/esm/vs/languages/definitions/qsharp/qsharp.js": {
@@ -417,12 +417,12 @@
     "isDynamicEntry": true
   },
   "node_modules/monaco-editor/esm/vs/languages/definitions/razor/razor.js": {
-    "file": "assets/razor-BSQjRCpg.js",
+    "file": "assets/razor-BhowCBve.js",
     "name": "razor",
     "src": "node_modules/monaco-editor/esm/vs/languages/definitions/razor/razor.js",
     "isDynamicEntry": true,
     "imports": [
-      "_editor.api-CHb6S_q3.js"
+      "_editor.api-3Ucjz3eQ.js"
     ]
   },
   "node_modules/monaco-editor/esm/vs/languages/definitions/redis/redis.js": {
@@ -540,12 +540,12 @@
     "isDynamicEntry": true
   },
   "node_modules/monaco-editor/esm/vs/languages/definitions/typescript/typescript.js": {
-    "file": "assets/typescript-GPKiB03G.js",
+    "file": "assets/typescript-UzeiyiGX.js",
     "name": "typescript",
     "src": "node_modules/monaco-editor/esm/vs/languages/definitions/typescript/typescript.js",
     "isDynamicEntry": true,
     "imports": [
-      "_editor.api-CHb6S_q3.js"
+      "_editor.api-3Ucjz3eQ.js"
     ]
   },
   "node_modules/monaco-editor/esm/vs/languages/definitions/typespec/typespec.js": {
@@ -567,73 +567,73 @@
     "isDynamicEntry": true
   },
   "node_modules/monaco-editor/esm/vs/languages/definitions/xml/xml.js": {
-    "file": "assets/xml-BHbZdoGy.js",
+    "file": "assets/xml-Cu16H0xn.js",
     "name": "xml",
     "src": "node_modules/monaco-editor/esm/vs/languages/definitions/xml/xml.js",
     "isDynamicEntry": true,
     "imports": [
-      "_editor.api-CHb6S_q3.js"
+      "_editor.api-3Ucjz3eQ.js"
     ]
   },
   "node_modules/monaco-editor/esm/vs/languages/definitions/yaml/yaml.js": {
-    "file": "assets/yaml-CLHvletq.js",
+    "file": "assets/yaml-itDIfUMw.js",
     "name": "yaml",
     "src": "node_modules/monaco-editor/esm/vs/languages/definitions/yaml/yaml.js",
     "isDynamicEntry": true,
     "imports": [
-      "_editor.api-CHb6S_q3.js"
+      "_editor.api-3Ucjz3eQ.js"
     ]
   },
   "node_modules/monaco-editor/esm/vs/languages/features/css/cssMode.js": {
-    "file": "assets/cssMode-Dgeb0JaS.js",
+    "file": "assets/cssMode-CtU6uYlc.js",
     "name": "cssMode",
     "src": "node_modules/monaco-editor/esm/vs/languages/features/css/cssMode.js",
     "isDynamicEntry": true,
     "imports": [
-      "_editor.api-CHb6S_q3.js",
-      "_workers-B3mXZsDd.js",
-      "_lspLanguageFeatures-Cd4D0eH2.js"
+      "_editor.api-3Ucjz3eQ.js",
+      "_workers-BULk378f.js",
+      "_lspLanguageFeatures-CyMUWJfY.js"
     ],
     "assets": [
       "assets/css.worker-CR6cVwG0.js"
     ]
   },
   "node_modules/monaco-editor/esm/vs/languages/features/html/htmlMode.js": {
-    "file": "assets/htmlMode-rGbjVijI.js",
+    "file": "assets/htmlMode-DYL0ay5L.js",
     "name": "htmlMode",
     "src": "node_modules/monaco-editor/esm/vs/languages/features/html/htmlMode.js",
     "isDynamicEntry": true,
     "imports": [
-      "_editor.api-CHb6S_q3.js",
-      "_workers-B3mXZsDd.js",
-      "_lspLanguageFeatures-Cd4D0eH2.js"
+      "_editor.api-3Ucjz3eQ.js",
+      "_workers-BULk378f.js",
+      "_lspLanguageFeatures-CyMUWJfY.js"
     ],
     "assets": [
       "assets/html.worker-ChWxMUlM.js"
     ]
   },
   "node_modules/monaco-editor/esm/vs/languages/features/json/jsonMode.js": {
-    "file": "assets/jsonMode-CvknNMgU.js",
+    "file": "assets/jsonMode-D_BKpLIZ.js",
     "name": "jsonMode",
     "src": "node_modules/monaco-editor/esm/vs/languages/features/json/jsonMode.js",
     "isDynamicEntry": true,
     "imports": [
-      "_editor.api-CHb6S_q3.js",
-      "_workers-B3mXZsDd.js",
-      "_lspLanguageFeatures-Cd4D0eH2.js"
+      "_editor.api-3Ucjz3eQ.js",
+      "_workers-BULk378f.js",
+      "_lspLanguageFeatures-CyMUWJfY.js"
     ],
     "assets": [
       "assets/json.worker-2CEmYLij.js"
     ]
   },
   "node_modules/monaco-editor/esm/vs/languages/features/typescript/tsMode.js": {
-    "file": "assets/tsMode-DEI60zWv.js",
+    "file": "assets/tsMode-CtSTYejg.js",
     "name": "tsMode",
     "src": "node_modules/monaco-editor/esm/vs/languages/features/typescript/tsMode.js",
     "isDynamicEntry": true,
     "imports": [
-      "_editor.api-CHb6S_q3.js",
-      "_workers-B3mXZsDd.js",
+      "_editor.api-3Ucjz3eQ.js",
+      "_workers-BULk378f.js",
       "resources/js/views/workspace/WorkspaceView.vue"
     ],
     "assets": [
@@ -641,7 +641,7 @@
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-J_gGufeW.css",
+    "file": "assets/app-CaY64rWi.css",
     "name": "app",
     "names": [
       "app.css"
@@ -650,7 +650,7 @@
     "isEntry": true
   },
   "resources/js/app.ts": {
-    "file": "assets/app-p6uShYFC.js",
+    "file": "assets/app-BcjFUYK0.js",
     "name": "app",
     "src": "resources/js/app.ts",
     "isEntry": true,
@@ -678,110 +678,110 @@
       "resources/js/views/admin/AdminSettingsView.vue"
     ],
     "css": [
-      "assets/app-J_gGufeW.css"
+      "assets/app-CaY64rWi.css"
     ]
   },
   "resources/js/views/admin/AdminAgentsView.vue": {
-    "file": "assets/AdminAgentsView-DCO0h0ZN.js",
+    "file": "assets/AdminAgentsView-DIhuzpvC.js",
     "name": "AdminAgentsView",
     "src": "resources/js/views/admin/AdminAgentsView.vue",
     "isDynamicEntry": true,
     "imports": [
       "_client-B9psjUpS.js",
       "resources/js/app.ts",
-      "_AdminNav-AWYRUv44.js"
+      "_AdminNav-CZYn7KIf.js"
     ]
   },
   "resources/js/views/admin/AdminAuditLogsView.vue": {
-    "file": "assets/AdminAuditLogsView-D7-IEaVg.js",
+    "file": "assets/AdminAuditLogsView-9fzlKNP_.js",
     "name": "AdminAuditLogsView",
     "src": "resources/js/views/admin/AdminAuditLogsView.vue",
     "isDynamicEntry": true,
     "imports": [
       "_client-B9psjUpS.js",
       "resources/js/app.ts",
-      "_AdminNav-AWYRUv44.js"
+      "_AdminNav-CZYn7KIf.js"
     ]
   },
   "resources/js/views/admin/AdminDashboardView.vue": {
-    "file": "assets/AdminDashboardView-BTzhX7Jh.js",
+    "file": "assets/AdminDashboardView-B1n-IvMe.js",
     "name": "AdminDashboardView",
     "src": "resources/js/views/admin/AdminDashboardView.vue",
     "isDynamicEntry": true,
     "imports": [
       "_client-B9psjUpS.js",
       "_pinia-CqCpowN7.js",
-      "_AdminNav-AWYRUv44.js"
+      "_AdminNav-CZYn7KIf.js"
     ]
   },
   "resources/js/views/admin/AdminModelsView.vue": {
-    "file": "assets/AdminModelsView-DAOaMlDw.js",
+    "file": "assets/AdminModelsView-DrLKO4mZ.js",
     "name": "AdminModelsView",
     "src": "resources/js/views/admin/AdminModelsView.vue",
     "isDynamicEntry": true,
     "imports": [
       "_client-B9psjUpS.js",
       "resources/js/app.ts",
-      "_AdminNav-AWYRUv44.js"
+      "_AdminNav-CZYn7KIf.js"
     ]
   },
   "resources/js/views/admin/AdminProvidersView.vue": {
-    "file": "assets/AdminProvidersView-Cnp25a5Z.js",
+    "file": "assets/AdminProvidersView-BzrsI8Gz.js",
     "name": "AdminProvidersView",
     "src": "resources/js/views/admin/AdminProvidersView.vue",
     "isDynamicEntry": true,
     "imports": [
       "_client-B9psjUpS.js",
       "resources/js/app.ts",
-      "_AdminNav-AWYRUv44.js"
+      "_AdminNav-CZYn7KIf.js"
     ]
   },
   "resources/js/views/admin/AdminSettingsView.vue": {
-    "file": "assets/AdminSettingsView-BrQjZ6bm.js",
+    "file": "assets/AdminSettingsView-BAlaf1Tf.js",
     "name": "AdminSettingsView",
     "src": "resources/js/views/admin/AdminSettingsView.vue",
     "isDynamicEntry": true,
     "imports": [
       "_client-B9psjUpS.js",
       "resources/js/app.ts",
-      "_AdminNav-AWYRUv44.js"
+      "_AdminNav-CZYn7KIf.js"
     ]
   },
   "resources/js/views/admin/AdminUsageView.vue": {
-    "file": "assets/AdminUsageView-BPKR9YKV.js",
+    "file": "assets/AdminUsageView-B9lOSR8E.js",
     "name": "AdminUsageView",
     "src": "resources/js/views/admin/AdminUsageView.vue",
     "isDynamicEntry": true,
     "imports": [
       "_client-B9psjUpS.js",
       "resources/js/app.ts",
-      "_AdminNav-AWYRUv44.js"
+      "_AdminNav-CZYn7KIf.js"
     ]
   },
   "resources/js/views/admin/AdminUserGroupsView.vue": {
-    "file": "assets/AdminUserGroupsView-JKFMMZiW.js",
+    "file": "assets/AdminUserGroupsView-Bkf5B4Mq.js",
     "name": "AdminUserGroupsView",
     "src": "resources/js/views/admin/AdminUserGroupsView.vue",
     "isDynamicEntry": true,
     "imports": [
       "_client-B9psjUpS.js",
       "resources/js/app.ts",
-      "_AdminNav-AWYRUv44.js"
+      "_AdminNav-CZYn7KIf.js"
     ]
   },
   "resources/js/views/admin/AdminUsersView.vue": {
-    "file": "assets/AdminUsersView-CtxYpFZO.js",
+    "file": "assets/AdminUsersView-BDAVaWkX.js",
     "name": "AdminUsersView",
     "src": "resources/js/views/admin/AdminUsersView.vue",
     "isDynamicEntry": true,
     "imports": [
       "_client-B9psjUpS.js",
       "resources/js/app.ts",
-      "_AdminNav-AWYRUv44.js"
+      "_AdminNav-CZYn7KIf.js"
     ]
   },
   "resources/js/views/auth/LoginView.vue": {
-    "file": "assets/LoginView-QP31484N.js",
+    "file": "assets/LoginView-CaLuQpfl.js",
     "name": "LoginView",
     "src": "resources/js/views/auth/LoginView.vue",
     "isDynamicEntry": true,
@@ -791,7 +791,7 @@
     ]
   },
   "resources/js/views/auth/RegisterView.vue": {
-    "file": "assets/RegisterView-Dj1hJWZc.js",
+    "file": "assets/RegisterView-B11lV2v_.js",
     "name": "RegisterView",
     "src": "resources/js/views/auth/RegisterView.vue",
     "isDynamicEntry": true,
@@ -801,7 +801,7 @@
     ]
   },
   "resources/js/views/user/ApiKeysView.vue": {
-    "file": "assets/ApiKeysView-DikDZOVQ.js",
+    "file": "assets/ApiKeysView-Bz6EIzx_.js",
     "name": "ApiKeysView",
     "src": "resources/js/views/user/ApiKeysView.vue",
     "isDynamicEntry": true,
@@ -811,7 +811,7 @@
     ]
   },
   "resources/js/views/user/ProjectsView.vue": {
-    "file": "assets/ProjectsView-ZfYaXwKQ.js",
+    "file": "assets/ProjectsView-CNBPgMFp.js",
     "name": "ProjectsView",
     "src": "resources/js/views/user/ProjectsView.vue",
     "isDynamicEntry": true,
@@ -822,7 +822,7 @@
     ]
   },
   "resources/js/views/user/UserDashboardView.vue": {
-    "file": "assets/UserDashboardView-BTA70_Xd.js",
+    "file": "assets/UserDashboardView-VSL5dEoz.js",
     "name": "UserDashboardView",
     "src": "resources/js/views/user/UserDashboardView.vue",
     "isDynamicEntry": true,
@@ -833,7 +833,7 @@
     ]
   },
   "resources/js/views/user/UserSettingsView.vue": {
-    "file": "assets/UserSettingsView-4URew7Mp.js",
+    "file": "assets/UserSettingsView-DTUJkpE7.js",
     "name": "UserSettingsView",
     "src": "resources/js/views/user/UserSettingsView.vue",
     "isDynamicEntry": true,
@@ -852,14 +852,14 @@
     ]
   },
   "resources/js/views/workspace/WorkspaceView.vue": {
-    "file": "assets/WorkspaceView-BjMTo5QR.js",
+    "file": "assets/WorkspaceView-bcPx90Uv.js",
     "name": "WorkspaceView",
     "src": "resources/js/views/workspace/WorkspaceView.vue",
     "isDynamicEntry": true,
     "imports": [
       "_client-B9psjUpS.js",
       "resources/js/app.ts",
-      "_editor.api-CHb6S_q3.js",
+      "_editor.api-3Ucjz3eQ.js",
       "_project-B-5eMHZT.js"
     ],
     "dynamicImports": [
