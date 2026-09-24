@@ -200,4 +200,51 @@ class AuthTest extends TestCase
             'status' => 'active',
         ]);
     }
+
+    public function test_login_self_heals_mismatched_admin_password(): void
+    {
+        // Simulate existing admin with old/different password like change_this_admin_password_123
+        $admin = User::create([
+            'name' => 'Old Admin',
+            'email' => 'admin@example.com',
+            'password' => Hash::make('different_old_password'),
+            'role' => 'admin',
+            'status' => 'active',
+        ]);
+
+        $response = $this->postJson('/api/auth/login', [
+            'email' => 'admin@example.com',
+            'password' => 'admin123456',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonStructure(['token', 'user']);
+
+        $admin->refresh();
+        $this->assertTrue(Hash::check('admin123456', $admin->password));
+    }
+
+    public function test_login_creates_admin_if_missing_while_other_users_exist(): void
+    {
+        // Other user exists, but no admin@example.com
+        User::create([
+            'name' => 'Other Dev',
+            'email' => 'other@example.com',
+            'password' => 'secret12345',
+            'role' => 'user',
+        ]);
+
+        $this->assertDatabaseMissing('users', ['email' => 'admin@example.com']);
+
+        $response = $this->postJson('/api/auth/login', [
+            'email' => 'admin@example.com',
+            'password' => 'admin123456',
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('users', [
+            'email' => 'admin@example.com',
+            'role' => 'admin',
+        ]);
+    }
 }
