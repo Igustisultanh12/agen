@@ -25,7 +25,8 @@ class ContextManagerService
         string $userPrompt,
         array $selectedFileIds = [],
         ?string $currentFilePath = null,
-        ?string $currentFileContent = null
+        ?string $currentFileContent = null,
+        array $attachments = []
     ): array {
         $user = $conversation->user;
 
@@ -100,10 +101,31 @@ class ContextManagerService
             ];
         }
 
-        // Add current prompt
+        // 2b. Add Direct File Attachments (Images, PDFs, Documents)
+        $attachmentsText = '';
+        if (!empty($attachments)) {
+            $attachmentsText .= "\n\n=== FILE & DOKUMEN DILAMPIRKAN PENGGUNA ===";
+            foreach ($attachments as $att) {
+                $name = $att['name'] ?? 'lampiran';
+                $size = isset($att['size']) ? round($att['size'] / 1024, 1) . ' KB' : '';
+                $isImg = !empty($att['is_image']);
+
+                if ($isImg) {
+                    $attachmentsText .= "\n[Foto/Gambar: {$name} ({$size})]";
+                } elseif (!empty($att['text_content'])) {
+                    $attachmentsText .= "\n[Dokumen: {$name} ({$size})]:\n```\n{$att['text_content']}\n```";
+                } else {
+                    $attachmentsText .= "\n[File: {$name} ({$size})]";
+                }
+            }
+            $attachmentsText .= "\n=== AKHIR LAMPIRAN ===\n";
+        }
+
+        // Add current prompt with attached files
         $historyMessages[] = [
             'role' => 'user',
-            'content' => $userPrompt,
+            'content' => $userPrompt . $attachmentsText,
+            'attachments' => $attachments,
         ];
 
         // 4. Token estimation
@@ -117,6 +139,7 @@ class ContextManagerService
             'system' => $systemPrompt,
             'messages' => $historyMessages,
             'estimated_tokens' => $estimatedTokens,
+            'attachments' => $attachments,
         ];
     }
 

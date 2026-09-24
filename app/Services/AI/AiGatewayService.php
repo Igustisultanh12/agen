@@ -32,7 +32,8 @@ class AiGatewayService
         array $selectedFileIds = [],
         ?string $currentFilePath = null,
         ?string $currentFileContent = null,
-        ?string $idempotencyKey = null
+        ?string $idempotencyKey = null,
+        array $attachments = []
     ): array {
         // 1. Validate User & Quota
         $this->validateUserAccess($user);
@@ -52,7 +53,8 @@ class AiGatewayService
             $prompt,
             $selectedFileIds,
             $currentFilePath,
-            $currentFileContent
+            $currentFileContent,
+            $attachments
         );
 
         // 3. Check Quota
@@ -67,6 +69,7 @@ class AiGatewayService
             'role' => 'user',
             'content' => $prompt,
             'model' => $primaryModel->slug,
+            'metadata' => !empty($attachments) ? ['attachments' => $attachments] : null,
         ]);
 
         $internalRequestId = $idempotencyKey ?: (string) Str::uuid();
@@ -173,7 +176,8 @@ class AiGatewayService
         string $prompt,
         array $selectedFileIds = [],
         ?string $currentFilePath = null,
-        ?string $currentFileContent = null
+        ?string $currentFileContent = null,
+        array $attachments = []
     ): StreamedResponse {
         $this->validateUserAccess($user);
 
@@ -191,7 +195,8 @@ class AiGatewayService
             $prompt,
             $selectedFileIds,
             $currentFilePath,
-            $currentFileContent
+            $currentFileContent,
+            $attachments
         );
 
         if (!$this->quotaService->checkUserQuota($user, $context['estimated_tokens'])) {
@@ -205,6 +210,7 @@ class AiGatewayService
             'role' => 'user',
             'content' => $prompt,
             'model' => $primaryModel->slug,
+            'metadata' => !empty($attachments) ? ['attachments' => $attachments] : null,
         ]);
 
         $internalRequestId = (string) Str::uuid();

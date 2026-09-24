@@ -36,6 +36,19 @@ export interface AgentOption {
     is_default: boolean;
 }
 
+export interface AttachmentItem {
+    id: string;
+    name: string;
+    size: number;
+    extension?: string;
+    mime_type?: string;
+    url: string;
+    storage_path?: string;
+    is_image: boolean;
+    text_content?: string | null;
+    base64?: string | null;
+}
+
 export interface MessageItem {
     id?: number;
     role: 'user' | 'assistant' | 'system' | 'tool';
@@ -48,6 +61,10 @@ export interface MessageItem {
     duration_ms?: number;
     is_streaming?: boolean;
     created_at?: string;
+    metadata?: {
+        attachments?: AttachmentItem[];
+        [key: string]: any;
+    } | null;
 }
 
 export interface ConversationItem {
@@ -168,18 +185,33 @@ export const useChatStore = defineStore('chat', () => {
         }
     }
 
+    async function uploadAttachment(file: File): Promise<AttachmentItem> {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const res = await api.post<AttachmentItem>('/chat/upload-attachment', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+
+        return res.data;
+    }
+
     async function sendMessageFallback(
         convId: number,
         prompt: string,
         selectedFileIds: number[] = [],
         currentFilePath?: string,
-        currentFileContent?: string
+        currentFileContent?: string,
+        attachments: AttachmentItem[] = []
     ) {
         const payload: any = {
             prompt,
             selected_file_ids: selectedFileIds,
             current_file_path: currentFilePath,
             current_file_content: currentFileContent,
+            attachments,
         };
         if (selectedModelId.value) {
             payload.model_id = selectedModelId.value;
@@ -211,7 +243,8 @@ export const useChatStore = defineStore('chat', () => {
         prompt: string,
         selectedFileIds: number[] = [],
         currentFilePath?: string,
-        currentFileContent?: string
+        currentFileContent?: string,
+        attachments: AttachmentItem[] = []
     ) {
         if (!currentConversation.value) {
             await createConversation();
@@ -219,11 +252,12 @@ export const useChatStore = defineStore('chat', () => {
 
         const convId = currentConversation.value!.id;
 
-        // Push local user message immediately
+        // Push local user message immediately with attachment metadata
         messages.value.push({
             role: 'user',
             content: prompt,
             created_at: new Date().toISOString(),
+            metadata: attachments.length > 0 ? { attachments } : null,
         });
 
         isStreaming.value = true;
@@ -235,7 +269,7 @@ export const useChatStore = defineStore('chat', () => {
         try {
             const streamUrl = `/api/chat/conversations/${convId}/stream`;
 
-            const response = await fetch(streamUrl.toString(), {
+            const response = await fetch(streamUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -249,13 +283,14 @@ export const useChatStore = defineStore('chat', () => {
                     selected_file_ids: selectedFileIds,
                     current_file_path: currentFilePath,
                     current_file_content: currentFileContent,
+                    attachments,
                 }),
                 signal: abortController.signal,
             });
 
             if (!response.ok) {
                 console.warn('Streaming endpoint returned error, switching to direct send fallback...');
-                await sendMessageFallback(convId, prompt, selectedFileIds, currentFilePath, currentFileContent);
+                await sendMessageFallback(convId, prompt, selectedFileIds, currentFilePath, currentFileContent, attachments);
                 return;
             }
 
@@ -329,7 +364,7 @@ export const useChatStore = defineStore('chat', () => {
             } else {
                 try {
                     console.warn('Stream connection failed, falling back to direct send...', err);
-                    await sendMessageFallback(convId, prompt, selectedFileIds, currentFilePath, currentFileContent);
+                    await sendMessageFallback(convId, prompt, selectedFileIds, currentFilePath, currentFileContent, attachments);
                 } catch (fallbackErr: any) {
                     messages.value.push({
                         role: 'assistant',
@@ -373,6 +408,7 @@ export const useChatStore = defineStore('chat', () => {
         createConversation,
         selectConversation,
         deleteConversation,
+        uploadAttachment,
         sendMessageStream,
         stopGeneration,
     };

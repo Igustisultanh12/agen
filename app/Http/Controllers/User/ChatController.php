@@ -9,6 +9,7 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\Project;
 use App\Services\AI\AiGatewayService;
+use App\Services\AI\AttachmentService;
 use App\Services\AI\FccService;
 use App\Services\AI\ModelService;
 use Illuminate\Http\JsonResponse;
@@ -20,7 +21,8 @@ class ChatController extends Controller
     public function __construct(
         protected AiGatewayService $aiGateway,
         protected ModelService $modelService,
-        protected FccService $fccService
+        protected FccService $fccService,
+        protected AttachmentService $attachmentService
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -169,6 +171,7 @@ class ChatController extends Controller
             'selected_file_ids.*' => 'exists:project_files,id',
             'current_file_path' => 'nullable|string',
             'current_file_content' => 'nullable|string',
+            'attachments' => 'nullable|array',
         ]);
 
         try {
@@ -179,7 +182,8 @@ class ChatController extends Controller
                 $validated['selected_file_ids'] ?? [],
                 $validated['current_file_path'] ?? null,
                 $validated['current_file_content'] ?? null,
-                $request->header('Idempotency-Key')
+                $request->header('Idempotency-Key'),
+                $validated['attachments'] ?? []
             );
 
             return response()->json($result);
@@ -221,6 +225,7 @@ class ChatController extends Controller
             'selected_file_ids.*' => 'exists:project_files,id',
             'current_file_path' => 'nullable|string',
             'current_file_content' => 'nullable|string',
+            'attachments' => 'nullable|array',
         ]);
 
         try {
@@ -230,13 +235,38 @@ class ChatController extends Controller
                 $validated['prompt'],
                 $validated['selected_file_ids'] ?? [],
                 $validated['current_file_path'] ?? null,
-                $validated['current_file_content'] ?? null
+                $validated['current_file_content'] ?? null,
+                $validated['attachments'] ?? []
             );
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Streaming Failed',
                 'message' => $e->getMessage(),
             ], 500);
+        }
+    }
+
+    /**
+     * Upload an attachment (image, PDF, document) for the chat workspace.
+     */
+    public function uploadAttachment(Request $request): JsonResponse
+    {
+        $request->validate([
+            'file' => 'required|file|max:20480', // max 20MB
+        ]);
+
+        try {
+            $attachment = $this->attachmentService->processUpload(
+                $request->file('file'),
+                $request->user()
+            );
+
+            return response()->json($attachment, 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Upload failed',
+                'message' => $e->getMessage(),
+            ], 422);
         }
     }
 

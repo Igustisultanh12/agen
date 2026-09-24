@@ -53,6 +53,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::delete('conversations/{conversation}', [ChatController::class, 'destroy']);
         Route::match(['GET', 'POST'], 'conversations/{conversation}/send', [ChatController::class, 'send']);
         Route::match(['GET', 'POST'], 'conversations/{conversation}/stream', [ChatController::class, 'stream']);
+        Route::post('upload-attachment', [ChatController::class, 'uploadAttachment']);
         Route::post('stop', [ChatController::class, 'stop']);
     });
 

@@ -88,6 +88,40 @@
                                 ? 'bg-[#2563EB] text-white border-blue-600 rounded-tr-none shadow-sm'
                                 : 'bg-white text-slate-800 border-[#E2E8F0] rounded-tl-none shadow-sm'"
                         >
+                            <!-- User attachments gallery & document badges -->
+                            <div v-if="msg.role === 'user' && msg.metadata?.attachments?.length" class="mb-3 flex flex-wrap gap-2">
+                                <div
+                                    v-for="att in msg.metadata.attachments"
+                                    :key="att.id"
+                                    class="flex items-center gap-2 p-1.5 rounded-xl bg-blue-700/60 border border-blue-500/50 text-xs text-white"
+                                >
+                                    <img
+                                        v-if="att.is_image"
+                                        :src="att.url || att.base64"
+                                        :alt="att.name"
+                                        class="w-16 h-16 object-cover rounded-lg border border-white/20 cursor-pointer hover:opacity-90 transition-opacity"
+                                        @click="openImageModal(att.url || att.base64)"
+                                    />
+                                    <div v-else class="flex items-center space-x-2 px-2 py-1">
+                                        <span class="text-base">{{ att.extension === 'pdf' ? '📕' : '📄' }}</span>
+                                        <div class="truncate max-w-[180px]">
+                                            <div class="font-medium truncate text-[11px]">{{ att.name }}</div>
+                                            <div class="text-[10px] text-blue-200 font-mono">{{ formatFileSize(att.size) }}</div>
+                                        </div>
+                                        <a
+                                            v-if="att.url"
+                                            :href="att.url"
+                                            target="_blank"
+                                            download
+                                            class="p-1 hover:bg-white/20 rounded text-blue-100 transition-colors ml-1"
+                                            title="Buka / Unduh file"
+                                        >
+                                            ↗
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div v-if="msg.role === 'user'" class="whitespace-pre-wrap leading-relaxed">{{ msg.content }}</div>
                             <div v-else>
                                 <MarkdownMessage :content="msg.content" @apply-code="handleApplyCode" />
@@ -137,8 +171,60 @@
 
                 <!-- Chat Input Controls Bar (Fixed Dropdown Visibility) -->
                 <div class="p-6 bg-gradient-to-t from-[#F8FAFC] via-[#F8FAFC] to-transparent border-t border-slate-200/60">
-                    <div class="max-w-4xl mx-auto bg-white border border-[#E2E8F0] rounded-2xl shadow-xl shadow-slate-200/50 focus-within:border-[#2563EB] focus-within:ring-2 focus-within:ring-[#2563EB]/15 transition-all">
-                        <!-- Textarea -->
+                    <div
+                        class="max-w-4xl mx-auto bg-white border rounded-2xl shadow-xl shadow-slate-200/50 transition-all relative"
+                        :class="isDragging ? 'border-[#2563EB] ring-4 ring-[#2563EB]/20 bg-blue-50/20' : 'border-[#E2E8F0] focus-within:border-[#2563EB] focus-within:ring-2 focus-within:ring-[#2563EB]/15'"
+                        @dragover.prevent="isDragging = true"
+                        @dragleave.prevent="isDragging = false"
+                        @drop.prevent="handleDrop"
+                    >
+                        <!-- Drag & Drop Overlay Indicator -->
+                        <div v-if="isDragging" class="absolute inset-0 rounded-2xl bg-blue-50/95 border-2 border-dashed border-[#2563EB] z-30 flex flex-col items-center justify-center text-[#2563EB] font-bold text-sm pointer-events-none backdrop-blur-2xs space-y-1">
+                            <span class="text-3xl">📥</span>
+                            <span class="text-xs font-bold uppercase tracking-wider">Lepaskan File di Sini</span>
+                            <span class="text-[11px] text-slate-500 font-normal">Mendukung Foto/Gambar, PDF, Dokumen Word, dan Teks</span>
+                        </div>
+
+                        <!-- Pending Uploaded Attachment Preview Chips -->
+                        <div v-if="pendingAttachments.length > 0 || isUploadingAttachment" class="px-4 pt-3 pb-2 flex flex-wrap gap-2 border-b border-slate-100">
+                            <div
+                                v-for="att in pendingAttachments"
+                                :key="att.id"
+                                class="group relative flex items-center space-x-2 px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 shadow-2xs hover:border-[#2563EB]/40 transition-all"
+                            >
+                                <img
+                                    v-if="att.is_image"
+                                    :src="att.url || att.base64"
+                                    :alt="att.name"
+                                    class="w-8 h-8 object-cover rounded-lg border border-slate-200 cursor-pointer"
+                                    @click="openImageModal(att.url || att.base64)"
+                                />
+                                <span v-else class="text-base">{{ att.extension === 'pdf' ? '📕' : '📄' }}</span>
+                                <div class="truncate max-w-[150px]">
+                                    <div class="font-medium text-slate-800 truncate text-[11px]">{{ att.name }}</div>
+                                    <div class="text-[10px] text-slate-400 font-mono">{{ formatFileSize(att.size) }}</div>
+                                </div>
+                                <button
+                                    type="button"
+                                    class="w-5 h-5 rounded-full bg-slate-200 hover:bg-red-500 hover:text-white flex items-center justify-center text-[10px] text-slate-500 transition-colors ml-1 cursor-pointer"
+                                    @click="removePendingAttachment(att.id)"
+                                    title="Hapus lampiran"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            <!-- Uploading Indicator Spinner -->
+                            <div v-if="isUploadingAttachment" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-200 text-xs text-[#2563EB] animate-pulse">
+                                <svg class="animate-spin h-3.5 w-3.5 text-[#2563EB]" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span class="font-medium text-[11px]">Memproses file...</span>
+                            </div>
+                        </div>
+
+                        <!-- Textarea with paste listener -->
                         <textarea
                             ref="textareaRef"
                             v-model="inputPrompt"
@@ -148,9 +234,10 @@
                             @keydown.ctrl.enter.prevent="handleSend"
                             @keydown.meta.enter.prevent="handleSend"
                             @keydown.esc.prevent="handleEsc"
+                            @paste="handlePaste"
                         ></textarea>
 
-                        <!-- Bottom Controls Bar (No overflow-hidden so popup floats smoothly!) -->
+                        <!-- Bottom Controls Bar -->
                         <div class="px-4 py-2.5 bg-slate-50/80 border-t border-[#E2E8F0] flex items-center justify-between flex-wrap gap-2 rounded-b-2xl relative">
                             <div class="flex items-center space-x-2">
                                 <!-- Model Selector (Floats upward without glitch) -->
@@ -165,16 +252,37 @@
                                     :agents="chatStore.agents"
                                 />
 
-                                <!-- Attach File Button -->
+                                <!-- Attach File / Media Button (Direct Computer Upload: Images, PDFs, Docs) -->
                                 <button
-                                    v-if="projectStore.currentProject"
                                     type="button"
-                                    class="flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-slate-300 text-xs font-semibold text-slate-700 shadow-xs transition-colors"
-                                    @click="showAttachFileModal = true"
-                                    title="Lampirkan file project sebagai konteks"
+                                    class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-slate-300 text-xs font-semibold text-slate-700 shadow-xs transition-colors cursor-pointer"
+                                    @click="triggerFileInput"
+                                    title="Lampirkan foto, PDF, atau dokumen dari perangkat Anda"
                                 >
                                     <span>📎</span>
                                     <span>Lampirkan</span>
+                                </button>
+
+                                <!-- Hidden Native File Input -->
+                                <input
+                                    ref="fileInputRef"
+                                    type="file"
+                                    multiple
+                                    accept="image/*,.pdf,.doc,.docx,.txt,.csv,.json,.md,.js,.ts,.py,.php,.html,.css,.sql"
+                                    class="hidden"
+                                    @change="handleFileInputChange"
+                                />
+
+                                <!-- Attach Project File Button if in a Project -->
+                                <button
+                                    v-if="projectStore.currentProject"
+                                    type="button"
+                                    class="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-[#E2E8F0] text-xs font-semibold text-slate-600 shadow-xs transition-colors cursor-pointer"
+                                    @click="showAttachFileModal = true"
+                                    title="Pilih file dari project tree"
+                                >
+                                    <span>📁</span>
+                                    <span>Project File</span>
                                 </button>
                             </div>
 
@@ -183,7 +291,7 @@
                                 <button
                                     v-if="chatStore.isStreaming"
                                     type="button"
-                                    class="px-4 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-bold flex items-center space-x-1.5 transition-colors"
+                                    class="px-4 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-bold flex items-center space-x-1.5 transition-colors cursor-pointer"
                                     @click="chatStore.stopGeneration"
                                 >
                                     <span class="w-2 h-2 rounded-sm bg-red-600"></span>
@@ -194,7 +302,7 @@
                                 <button
                                     v-else
                                     type="button"
-                                    :disabled="!inputPrompt.trim()"
+                                    :disabled="!inputPrompt.trim() && pendingAttachments.length === 0"
                                     class="px-5 py-2 rounded-xl bg-[#2563EB] hover:bg-blue-700 disabled:opacity-40 text-white text-xs font-bold flex items-center space-x-1.5 transition-all shadow-md shadow-blue-500/20 cursor-pointer"
                                     @click="handleSend"
                                 >
@@ -363,12 +471,25 @@
                 </div>
             </div>
         </div>
+
+        <!-- Image Preview Modal (Lightbox) -->
+        <div v-if="showImageModal" class="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4" @click.self="showImageModal = false">
+            <div class="relative max-w-4xl max-h-[90vh] flex flex-col items-center">
+                <button
+                    class="absolute -top-10 right-0 text-white hover:text-slate-300 text-xs font-bold bg-slate-800/80 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                    @click="showImageModal = false"
+                >
+                    ✕ Tutup Preview
+                </button>
+                <img :src="previewImageUrl" class="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-slate-700" />
+            </div>
+        </div>
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue';
-import { useChatStore } from '../../stores/chat';
+import { useChatStore, type AttachmentItem } from '../../stores/chat';
 import { useProjectStore, type FileItem } from '../../stores/project';
 import MarkdownMessage from '../../components/MarkdownMessage.vue';
 import MonacoEditor from '../../components/MonacoEditor.vue';
@@ -381,6 +502,12 @@ const projectStore = useProjectStore();
 const inputPrompt = ref('');
 const messagesContainer = ref<HTMLElement | null>(null);
 const textareaRef = ref<HTMLTextAreaElement | null>(null);
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const pendingAttachments = ref<AttachmentItem[]>([]);
+const isUploadingAttachment = ref(false);
+const isDragging = ref(false);
+const showImageModal = ref(false);
+const previewImageUrl = ref('');
 const showEditorPanel = ref(true);
 const rightTab = ref<'editor' | 'files'>('editor');
 const editorContent = ref('');
@@ -432,10 +559,13 @@ function scrollToBottom() {
 }
 
 async function handleSend() {
-    if (!inputPrompt.value.trim() || chatStore.isStreaming) return;
+    if ((!inputPrompt.value.trim() && pendingAttachments.value.length === 0) || chatStore.isStreaming) return;
 
-    const promptText = inputPrompt.value.trim();
+    const promptText = inputPrompt.value.trim() || 'Tolong analisa file yang saya lampirkan:';
     inputPrompt.value = '';
+
+    const currentAttachments = [...pendingAttachments.value];
+    pendingAttachments.value = [];
 
     const fileIds = attachedFiles.value.map(f => f.id);
     const activePath = projectStore.activeFile?.path;
@@ -443,9 +573,76 @@ async function handleSend() {
 
     scrollToBottom();
 
-    await chatStore.sendMessageStream(promptText, fileIds, activePath, activeCode);
+    await chatStore.sendMessageStream(promptText, fileIds, activePath, activeCode, currentAttachments);
 
     scrollToBottom();
+}
+
+function triggerFileInput() {
+    fileInputRef.value?.click();
+}
+
+async function uploadSingleFile(file: File) {
+    isUploadingAttachment.value = true;
+    try {
+        const att = await chatStore.uploadAttachment(file);
+        pendingAttachments.value.push(att);
+    } catch (err: any) {
+        alert(err.response?.data?.message || 'Gagal mengunggah file. Pastikan ukuran di bawah 20MB.');
+    } finally {
+        isUploadingAttachment.value = false;
+    }
+}
+
+async function handleFileInputChange(e: Event) {
+    const target = e.target as HTMLInputElement;
+    if (!target.files || target.files.length === 0) return;
+    const files = Array.from(target.files);
+    for (const f of files) {
+        await uploadSingleFile(f);
+    }
+    target.value = '';
+}
+
+async function handleDrop(e: DragEvent) {
+    isDragging.value = false;
+    if (!e.dataTransfer || !e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
+    const files = Array.from(e.dataTransfer.files);
+    for (const f of files) {
+        await uploadSingleFile(f);
+    }
+}
+
+function handlePaste(e: ClipboardEvent) {
+    if (!e.clipboardData) return;
+    const items = e.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+            const file = items[i].getAsFile();
+            if (file) {
+                e.preventDefault();
+                uploadSingleFile(file);
+            }
+        }
+    }
+}
+
+function removePendingAttachment(id: string) {
+    pendingAttachments.value = pendingAttachments.value.filter(a => a.id !== id);
+}
+
+function openImageModal(url?: string | null) {
+    if (!url) return;
+    previewImageUrl.value = url;
+    showImageModal.value = true;
+}
+
+function formatFileSize(bytes?: number): string {
+    if (!bytes) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
 function handleEsc() {
